@@ -142,7 +142,10 @@ async def license_guard_middleware(request, handler):
 
 # --- HANDLERS ---
 async def handle_index(request):
-    return web.Response(text=get_secure_index_html(), content_type="text/html")
+    html = get_secure_index_html()
+    if IS_CLOUD:
+        html = html.replace("</head>", "<script>window.CLOUD_SCRAPER_ONLY = true;</script></head>", 1)
+    return web.Response(text=html, content_type="text/html")
 
 async def handle_status(request):
     auth_info = await check_auth()

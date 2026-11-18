@@ -188,7 +188,7 @@
         }
     </style>
 </head>
-<body class="flex overflow-hidden h-screen">
+<body class="flex flex-col md:flex-row overflow-hidden h-screen">
 
     <!-- Snow Canvas -->
     <canvas id="snow-canvas" class="hidden"></canvas>
@@ -196,8 +196,30 @@
     <!-- Khay thông báo Toast -->
     <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
+    <!-- HEADER GỌN CHO ĐIỆN THOẠI / CLOUD -->
+    <header id="mobile-cloud-header" class="md:hidden glass-card border-b border-borderglass px-3.5 py-2.5 flex items-center justify-between gap-2 shrink-0 z-20">
+        <div class="flex items-center gap-2 min-w-0">
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-neonpurple to-neonblue flex items-center justify-center shrink-0">
+                <i data-lucide="send" class="w-3.5 h-3.5 text-white"></i>
+            </div>
+            <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-sm text-white tracking-tight">TeleToolkit</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-neonpurple/20 text-purple-300 font-semibold">PRO</span>
+                </div>
+                <div id="mobile-tele-phone" class="text-[11px] text-emerald-400 font-mono truncate">Đang kiểm tra...</div>
+            </div>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+            <button onclick="openAccountsModal()" class="px-2.5 py-1.5 rounded-lg bg-neonpurple/20 hover:bg-neonpurple/30 text-purple-200 border border-neonpurple/30 text-xs font-medium flex items-center gap-1 whitespace-nowrap">
+                <i data-lucide="user-cog" class="w-3.5 h-3.5"></i> Tài khoản
+            </button>
+            <button onclick="toggleTheme()" title="Sáng/Tối" class="w-8 h-8 rounded-lg bg-white/5 border border-borderglass flex items-center justify-center text-xs">🌙</button>
+        </div>
+    </header>
+
     <!-- THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR) -->
-    <aside class="w-60 glass-card border-r border-borderglass flex flex-col justify-between p-3.5 z-20 shrink-0">
+    <aside id="main-sidebar" class="hidden md:flex w-60 glass-card border-r border-borderglass flex-col justify-between p-3.5 z-20 shrink-0">
         <div>
             <!-- Logo -->
             <div class="flex items-center justify-between gap-2 px-1.5 py-2 mb-5 border-b border-borderglass/60 pb-3.5">
@@ -1047,14 +1069,23 @@
             try {
                 const res = await fetch('/api/status');
                 const data = await res.json();
+                const mobPhone = document.getElementById('mobile-tele-phone');
                 if (data.connected) {
                     document.getElementById('tele-user-name').innerText = data.first_name || 'Người dùng';
                     document.getElementById('tele-user-phone').innerText = data.phone || 'Đã kết nối';
                     document.getElementById('tele-status-dot').className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse';
+                    if (mobPhone) {
+                        mobPhone.innerText = `${data.first_name || 'Đã kết nối'} (${data.phone || ''})`;
+                        mobPhone.className = 'text-[11px] text-emerald-400 font-mono truncate';
+                    }
                 } else {
                     document.getElementById('tele-user-name').innerText = 'Chưa đăng nhập';
                     document.getElementById('tele-user-phone').innerText = 'Bấm Đổi tài khoản để thêm';
                     document.getElementById('tele-status-dot').className = 'w-2.5 h-2.5 rounded-full bg-red-500';
+                    if (mobPhone) {
+                        mobPhone.innerText = 'Chưa đăng nhập Telegram';
+                        mobPhone.className = 'text-[11px] text-rose-400 font-mono truncate';
+                    }
                     if (!window._hasCheckedLoginOnce) {
                         window._hasCheckedLoginOnce = true;
                         setTimeout(() => {
@@ -1901,6 +1932,15 @@
         }
 
         // Tự động kiểm tra lúc khởi động
+        if (window.CLOUD_SCRAPER_ONLY || window.innerWidth < 768) {
+            const sidebar = document.getElementById('main-sidebar');
+            const topbar = document.getElementById('mobile-cloud-header');
+            if (window.CLOUD_SCRAPER_ONLY) {
+                if (sidebar) sidebar.classList.add('hidden', 'md:hidden');
+                if (topbar) topbar.classList.remove('md:hidden');
+            }
+            switchTab('member-filter');
+        }
         checkLicenseStatus();
         checkConnection();
         loadDashboardMetrics();

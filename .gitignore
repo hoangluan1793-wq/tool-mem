@@ -1,3 +1,21 @@
+# Sensitive / Local Runtime Files
+admin_private.pem
+license.key
+config.json
+tele_session.session*
+sessions/
+toolkit.db*
+.app.lock
+.keygen.lock
+.sys_time.dat
+error.log
+update.log
+_update/
+
+# Build & Cache
 __pycache__/
-cloudflared.exe
+*.pyc
+Xuat_Ban_Cho_Khach/
 output/
+web/uploads/*
+!web/uploads/.gitkeep

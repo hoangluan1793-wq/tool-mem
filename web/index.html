@@ -1,0 +1,2200 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Toolkit Pro</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font: Be Vietnam Pro (UI) + JetBrains Mono (số, ID) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Be Vietnam Pro"', 'system-ui', 'Segoe UI', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'Consolas', 'monospace']
+                    },
+                    fontSize: {
+                        xs: ['13px', { lineHeight: '1.5' }],
+                        sm: ['14px', { lineHeight: '1.55' }],
+                        base: ['15px', { lineHeight: '1.6' }],
+                        lg: ['19px', { lineHeight: '1.4' }]
+                    },
+                    colors: {
+                        darkbg: '#0a0b14',
+                        surface: 'rgba(18, 20, 36, 0.7)',
+                        glass: 'rgba(255, 255, 255, 0.03)',
+                        borderglass: 'rgba(255, 255, 255, 0.08)',
+                        neonpurple: '#a855f7',
+                        neonblue: '#3b82f6',
+                        neongyan: '#06b6d4'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* ===== BASE DARK MODE ===== */
+        body {
+            background-color: #0a0b14;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.15) 0px, transparent 50%);
+            min-height: 100vh;
+            color: #e2e8f0;
+            font-family: 'Be Vietnam Pro', system-ui, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+        /* Nâng cỡ chữ phụ quá nhỏ cho dễ đọc */
+        .text-\[9px\]  { font-size: 11px !important; }
+        .text-\[10px\] { font-size: 11.5px !important; }
+        .text-\[11px\] { font-size: 12px !important; }
+        /* Nhãn bảng: bỏ IN HOA giãn chữ gây rối mắt */
+        thead th { text-transform: none; letter-spacing: 0; font-weight: 600; }
+        select, input, textarea, button { font-family: inherit; }
+        .glass-card {
+            background: rgba(18, 20, 36, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: background 0.4s ease, border-color 0.4s ease;
+        }
+        .glass-card-hover:hover {
+            border-color: rgba(168, 85, 247, 0.35);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+            transition: all 0.3s ease;
+        }
+        .neon-glow-purple { box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); }
+        .neon-glow-blue   { box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); }
+        .active-tab {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(59, 130, 246, 0.25));
+            border-left: 4px solid #a855f7;
+            color: #ffffff;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.4); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(168, 85, 247, 0.7); }
+
+        /* ===== LIGHT MODE ===== */
+        html.light body {
+            background-color: #f0f2f8;
+            background-image:
+                radial-gradient(at 0% 0%, rgba(168, 85, 247, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.08) 0px, transparent 50%);
+            color: #1e1f2e;
+        }
+        html.light .glass-card {
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+        }
+        html.light .text-gray-300 { color: #374151 !important; }
+        html.light .text-gray-400 { color: #4b5563 !important; }
+        html.light .text-gray-500 { color: #6b7280 !important; }
+        html.light .text-white    { color: #111827 !important; }
+        html.light .text-gray-200 { color: #374151 !important; }
+        html.light .bg-black\/40  { background: rgba(0,0,0,0.06) !important; }
+        html.light .bg-black\/30  { background: rgba(0,0,0,0.04) !important; }
+        html.light .bg-black\/60  { background: rgba(0,0,0,0.07) !important; }
+        html.light .bg-white\/5   { background: rgba(0,0,0,0.04) !important; }
+        html.light .bg-white\/10  { background: rgba(0,0,0,0.07) !important; }
+        html.light .bg-white\/15  { background: rgba(0,0,0,0.1)  !important; }
+        html.light .border-borderglass { border-color: rgba(0,0,0,0.1) !important; }
+        html.light .active-tab {
+            background: linear-gradient(135deg, rgba(168,85,247,0.15), rgba(59,130,246,0.15));
+        }
+        html.light select, html.light input[type=text], html.light input[type=password], html.light textarea, html.light input[type=date] {
+            color: #111827;
+            background: rgba(0,0,0,0.05);
+        }
+        html.light ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+        html.light ::-webkit-scrollbar-thumb { background: rgba(168,85,247,0.3); }
+
+        /* ===== ANIMATION PAGE LOAD ===== */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-18px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        .anim-fade-in-up  { animation: fadeInUp 0.45s ease both; }
+        .anim-fade-in     { animation: fadeIn 0.4s ease both; }
+        .anim-slide-left  { animation: slideInLeft 0.4s ease both; }
+        .tab-content:not(.hidden) { animation: fadeInUp 0.35s ease both; }
+        aside { animation: slideInLeft 0.4s ease both; }
+
+        /* ===== BUTTON HOVER ANIMATION ===== */
+        button, a[href] {
+            transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.2s ease;
+        }
+        button:hover:not(:disabled) { transform: translateY(-1px); }
+        button:active:not(:disabled) { transform: translateY(0px) scale(0.98); }
+
+        /* ===== SNOW CANVAS ===== */
+        #snow-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.55;
+        }
+
+        /* ===== THEME TOGGLE BUTTON ===== */
+        #btn-theme-toggle, #btn-snow-toggle {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px;
+            cursor: pointer;
+            border: 1px solid rgba(168,85,247,0.3);
+            background: rgba(168,85,247,0.12);
+            transition: background 0.2s, border-color 0.2s;
+        }
+        #btn-theme-toggle:hover, #btn-snow-toggle:hover {
+            background: rgba(168,85,247,0.28);
+        }
+
+        /* ===== MODAL ANIMATION ===== */
+        [id^="modal-"] > div {
+            animation: fadeInUp 0.3s ease both;
+        }
+
+        /* ===== CARD HOVER LIFT ===== */
+        .glass-card-hover {
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+        .glass-card-hover:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="flex overflow-hidden h-screen">
+
+    <!-- Snow Canvas -->
+    <canvas id="snow-canvas" class="hidden"></canvas>
+
+    <!-- Khay thông báo Toast -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR) -->
+    <aside class="w-60 glass-card border-r border-borderglass flex flex-col justify-between p-3.5 z-20 shrink-0">
+        <div>
+            <!-- Logo -->
+            <div class="flex items-center justify-between gap-2 px-1.5 py-2 mb-5 border-b border-borderglass/60 pb-3.5">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-neonpurple to-neonblue flex items-center justify-center shrink-0">
+                        <i data-lucide="send" class="w-4 h-4 text-white"></i>
+                    </div>
+                    <div class=" flex items-center gap-1.5 min-w-0">
+                        <h1 class="font-bold text-sm text-white tracking-tight whitespace-nowrap">TeleToolkit</h1>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-neonpurple/20 text-purple-300 font-semibold">PRO</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                    <button id="btn-theme-toggle" onclick="toggleTheme()" title="Giao diện Sáng/Tối" class="!w-7 !h-7 !text-xs">🌙</button>
+                    <button id="btn-snow-toggle" onclick="toggleSnow()" title="Hiệu ứng tuyết" class="!w-7 !h-7 !text-xs">❄️</button>
+                </div>
+            </div>
+
+            <!-- Danh mục Menu điều hướng -->
+            <nav class="space-y-1 text-xs font-medium">
+                <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all active-tab">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 text-neonpurple shrink-0"></i>
+                    <span>Bảng điều khiển</span>
+                </button>
+
+                <button onclick="switchTab('member-filter')" id="btn-tab-member-filter" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all">
+                    <i data-lucide="users" class="w-4 h-4 text-neonblue shrink-0"></i>
+                    <span>Quét thành viên</span>
+                </button>
+
+                <div class="pt-3.5 pb-1 px-3 text-[10px] font-semibold tracking-wider text-gray-500 uppercase">Chiến dịch & Kênh</div>
+
+                <button onclick="switchTab('ads-overview')" id="btn-tab-ads-overview" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-purple-400 shrink-0"></i>
+                    <span>Tổng quan quảng cáo</span>
+                </button>
+
+                <button onclick="switchTab('ads-creator')" id="btn-tab-ads-creator" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+                    <span>Tạo chiến dịch</span>
+                </button>
+
+                <button onclick="switchTab('channel-promo')" id="btn-tab-channel-promo" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all">
+                    <i data-lucide="megaphone" class="w-4 h-4 text-pink-400 shrink-0"></i>
+                    <span>Quản lý chiến dịch</span>
+                </button>
+
+                <button onclick="switchTab('ads-scheduler')" id="btn-tab-ads-scheduler" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all">
+                    <i data-lucide="calendar" class="w-4 h-4 text-yellow-400 shrink-0"></i>
+                    <span>Lịch phát sóng</span>
+                </button>
+
+                <button onclick="switchTab('ads-history')" id="btn-tab-ads-history" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all">
+                    <i data-lucide="history" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                    <span>Lịch sử đăng bài</span>
+                </button>
+
+                <button onclick="switchTab('ads-official')" id="btn-tab-ads-official" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all">
+                    <i data-lucide="globe" class="w-4 h-4 text-blue-400 shrink-0"></i>
+                    <span>Cổng Telegram Ads</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Khu vực Tài khoản & Thoát -->
+        <div class="space-y-2 pt-3 border-t border-borderglass/60">
+            <div class="p-2.5 rounded-xl bg-white/[0.03] border border-borderglass">
+                <div class="flex items-center justify-between mb-1.5">
+                    <div class="flex items-center gap-1.5">
+                        <div id="tele-status-dot" class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                        <span class="text-[10px] text-gray-400 font-medium">Tài khoản</span>
+                    </div>
+                    <button onclick="openAccountsModal()" class="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-gray-200 text-[10px] font-medium flex items-center gap-1 transition-all">
+                        <i data-lucide="repeat" class="w-2.5 h-2.5"></i> Đổi
+                    </button>
+                </div>
+                <div class="overflow-hidden">
+                    <div id="tele-user-name" class="text-xs font-semibold truncate text-white">Đang tải...</div>
+                    <div id="tele-user-phone" class="text-[11px] text-emerald-400 font-mono truncate">Đang kiểm tra...</div>
+                </div>
+            </div>
+
+            <button onclick="exitApplication()" class="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs transition-all">
+                <i data-lucide="power" class="w-3.5 h-3.5"></i>
+                <span>Thoát</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- KHU VỰC NỘI DUNG CHÍNH (MAIN CONTENT) -->
+    <main class="flex-1 flex flex-col overflow-y-auto px-5 py-4 relative">
+
+        <!-- Thanh trạng thái trên cùng -->
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-borderglass/60 text-xs">
+            <div class="flex items-center gap-2">
+                <span id="license-expiry-badge" class="hidden px-2.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/25 text-[11px] font-medium text-emerald-300 font-mono"></span>
+            </div>
+            <div class="flex items-center gap-2.5">
+                <button id="btn-update-badge" onclick="openUpdateModal()" class="hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 transition-all font-medium text-xs">
+                    <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i>
+                    <span>Cập nhật mới</span>
+                </button>
+                <a href="https://t.me/hoang1793" target="_blank" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 border border-borderglass transition-all">
+                    <i data-lucide="message-square" class="w-3.5 h-3.5 text-neonblue"></i>
+                    <span>Hỗ trợ: <strong class="text-white">@hoang1793</strong></span>
+                </a>
+            </div>
+        </div>
+
+        <!-- MODAL CẬP NHẬT -->
+        <div id="modal-update" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+            <div class="glass-card border border-borderglass rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400">
+                        <i data-lucide="download-cloud" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-white font-bold text-base">Cập nhật phần mềm</h3>
+                        <p class="text-gray-400 text-xs" id="update-version-info">Đang kiểm tra...</p>
+                    </div>
+                </div>
+                <div id="update-changelog" class="mb-5 p-3 rounded-xl bg-black/40 border border-borderglass text-gray-300 text-xs min-h-[48px]">
+                    Đang tải thông tin...
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="document.getElementById('modal-update').classList.add('hidden')" class="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-sm font-medium transition-all">
+                        Để sau
+                    </button>
+                    <button id="btn-do-update" onclick="doUpdate()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-bold transition-all hover:opacity-90">
+                        Cập nhật ngay
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 1: BẢNG ĐIỀU KHIỂN TỔNG QUAN -->
+        <section id="tab-dashboard" class="tab-content space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold text-white tracking-tight">Bảng điều khiển</h2>
+                <button onclick="loadDashboardMetrics()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg glass-card hover:bg-white/10 text-xs text-gray-300 transition-all">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Làm mới
+                </button>
+            </div>
+
+            <!-- Lưới thống kê -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                <div class="glass-card p-3.5 rounded-xl border border-borderglass flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-neonpurple/15 flex items-center justify-center text-neonpurple shrink-0">
+                        <i data-lucide="target" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="text-[11px] text-gray-400">Tổng chiến dịch</div>
+                        <div id="stat-total-campaigns" class="text-xl font-bold text-white">0</div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-3.5 rounded-xl border border-borderglass flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-500/15 flex items-center justify-center text-emerald-400 shrink-0">
+                        <i data-lucide="play-circle" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="text-[11px] text-gray-400">Đang chạy</div>
+                        <div id="stat-active-campaigns" class="text-xl font-bold text-emerald-400">0</div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-3.5 rounded-xl border border-borderglass flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-yellow-500/15 flex items-center justify-center text-yellow-400 shrink-0">
+                        <i data-lucide="clock" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="text-[11px] text-gray-400">Chờ lịch</div>
+                        <div id="stat-scheduled-campaigns" class="text-xl font-bold text-yellow-400">0</div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-3.5 rounded-xl border border-borderglass flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-neonblue/15 flex items-center justify-center text-neonblue shrink-0">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="text-[11px] text-gray-400">Hoàn thành</div>
+                        <div id="stat-completed-campaigns" class="text-xl font-bold text-white">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Biểu đồ & Nhật ký hoạt động -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2 glass-card p-4 rounded-xl border border-borderglass">
+                    <h3 class="text-xs font-semibold text-white mb-3 flex items-center gap-2">
+                        <i data-lucide="trending-up" class="w-4 h-4 text-neonpurple"></i>
+                        Hiệu suất đăng bài (7 ngày)
+                    </h3>
+                    <div class="h-60">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-card p-4 rounded-xl border border-borderglass flex flex-col">
+                    <h3 class="text-xs font-semibold text-white mb-3 flex items-center gap-2">
+                        <i data-lucide="activity" class="w-4 h-4 text-neonblue"></i>
+                        Nhật ký gần đây
+                    </h3>
+                    <div id="recent-logs-list" class="flex-1 overflow-y-auto space-y-2.5 text-xs pr-1 max-h-60">
+                        <div class="text-gray-500 text-center py-4">Chưa có nhật ký hoạt động.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: LỌC & CÀO THÀNH VIÊN (MEMBER FILTER & SCRAPER) -->
+        <section id="tab-member-filter" class="tab-content hidden space-y-3.5">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold text-white tracking-tight">Quét Thành Viên</h2>
+            </div>
+
+            <!-- Bảng thiết lập quét (Gọn, phẳng, mạch lạc) -->
+            <div class="glass-card p-4 rounded-xl border border-borderglass space-y-3.5">
+                <!-- Hàng 1: Nhóm nguồn cần quét (Chọn nhanh + Nhập link/ID cùng 1 hàng ngang) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Nhóm nguồn (Đã tham gia)</label>
+                        <select id="select-my-groups" onchange="onSelectMyGroup(this)" class="w-full bg-black/50 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-neonpurple">
+                            <option value="">-- Chọn từ nhóm đã tham gia --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Link, @username hoặc ID nhóm nguồn</label>
+                        <input type="text" id="scrape-source-group" oninput="if(!this.value.trim()) document.getElementById('select-my-groups').value=''" placeholder="vd: https://t.me/tennhom, @username hoặc -100..." class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-neonpurple">
+                    </div>
+                </div>
+
+                <!-- Hàng 2: Nhóm loại trừ trùng lặp (Chọn nhanh + Nhập link/ID cùng 1 hàng ngang) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Loại trừ thành viên từ nhóm</label>
+                        <select id="select-exclude-groups" onchange="onSelectExcludeGroup(this)" class="w-full bg-black/50 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-rose-400">
+                            <option value="">-- Không loại trừ nhóm nào --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Link, @username hoặc ID nhóm loại trừ</label>
+                        <input type="text" id="scrape-exclude-group" oninput="if(!this.value.trim()) document.getElementById('select-exclude-groups').value=''" placeholder="Bỏ trống nếu không cần loại trừ..." class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-rose-400">
+                    </div>
+                </div>
+
+                <!-- Hàng 3: 4 bộ lọc điều kiện nằm thẳng 1 hàng ngang -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-white/5">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Phương thức quét</label>
+                        <select id="scrape-mode" onchange="onScrapeModeChange(this.value)" class="w-full bg-black/40 border border-borderglass rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                            <option value="members">Danh sách thành viên</option>
+                            <option value="messages">Lịch sử tin nhắn</option>
+                        </select>
+                    </div>
+                    <div id="scrape-msg-limit-box" class="hidden">
+                        <label class="block text-xs font-medium text-amber-300 mb-1">Số tin quét</label>
+                        <select id="scrape-msg-limit" class="w-full bg-black/40 border border-amber-500/40 rounded-lg px-2.5 py-1.5 text-xs text-amber-200 focus:outline-none focus:border-amber-400">
+                            <option value="500">500 tin gần nhất</option>
+                            <option value="1000" selected>1.000 tin gần nhất</option>
+                            <option value="2000">2.000 tin gần nhất</option>
+                            <option value="5000">5.000 tin gần nhất</option>
+                            <option value="10000">10.000 tin gần nhất</option>
+                            <option value="all">Toàn bộ tin nhắn</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Hoạt động</label>
+                        <select id="scrape-filter-days" class="w-full bg-black/40 border border-borderglass rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                            <option value="">Tất cả thành viên</option>
+                            <option value="online">Đang online</option>
+                            <option value="1">Trong 24 giờ qua</option>
+                            <option value="3">Trong 3 ngày qua</option>
+                            <option value="7">Trong 7 ngày qua</option>
+                            <option value="30">Trong 30 ngày qua</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Ngôn ngữ tên</label>
+                        <select id="scrape-name-filter" class="w-full bg-black/40 border border-borderglass rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                            <option value="">Tất cả ngôn ngữ</option>
+                            <option value="vietnamese">Tên Tiếng Việt</option>
+                            <option value="english">Tên Tiếng Anh</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-medium text-gray-300">Lọc trùng lịch sử</label>
+                            <div class="flex items-center gap-1 text-[11px] text-gray-400 whitespace-nowrap">
+                                <span>Lưu: <strong id="scrape-history-count" class="text-emerald-400 font-mono">0</strong></span>
+                                <span>·</span>
+                                <button type="button" onclick="clearScrapeHistory()" class="text-rose-400 hover:text-rose-300">Xóa</button>
+                            </div>
+                        </div>
+                        <select id="scrape-dedup-mode" class="w-full bg-black/40 border border-borderglass rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                            <option value="all">Lấy tất cả (không lọc)</option>
+                            <option value="new_in_group">Chỉ người mới nhóm này</option>
+                            <option value="new_global">Chỉ người mới toàn bộ</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Thanh nút bấm -->
+                <div class="flex items-center gap-3 pt-2 border-t border-white/5">
+                    <button onclick="startScraping()" id="btn-start-scrape" class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-neonpurple to-neonblue text-white font-medium text-xs hover:opacity-90 transition-all whitespace-nowrap">
+                        <i data-lucide="play" class="w-3.5 h-3.5"></i> Bắt đầu quét
+                    </button>
+                    <button onclick="stopScraping()" id="btn-stop-scrape" class="hidden flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white font-medium text-xs transition-all whitespace-nowrap">
+                        <i data-lucide="square" class="w-3.5 h-3.5"></i> Dừng quét
+                    </button>
+                    <div id="scrape-spinner" class="hidden flex items-center gap-2 text-xs text-neonpurple">
+                        <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Đang quét: <span id="scrape-counter" class="font-mono font-semibold">0</span> thành viên
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bảng kết quả (Không gian hiển thị rộng rãi) -->
+            <div class="glass-card p-4 rounded-xl border border-borderglass space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 whitespace-nowrap">
+                        <h3 class="text-xs font-semibold text-white">Danh sách thành viên</h3>
+                        <span class="px-2 py-0.5 rounded bg-neonblue/15 text-neonblue border border-neonblue/30 text-[11px] font-mono font-semibold"><span id="members-count">0</span></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="exportScraped('csv')" class="px-2.5 py-1 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs font-medium hover:bg-emerald-600/35 flex items-center gap-1.5 whitespace-nowrap">
+                            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Xuất CSV
+                        </button>
+                        <button onclick="exportScraped('txt')" class="px-2.5 py-1 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-medium hover:bg-blue-600/35 flex items-center gap-1.5 whitespace-nowrap">
+                            <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Xuất TXT
+                        </button>
+                        <button onclick="openSendTgModal()" class="px-2.5 py-1 rounded-lg bg-purple-600/20 text-purple-300 border border-purple-500/30 text-xs font-medium hover:bg-purple-600/35 flex items-center gap-1.5 whitespace-nowrap">
+                            <i data-lucide="send" class="w-3.5 h-3.5"></i> Gửi vào Telegram
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto max-h-[340px]">
+                    <table class="w-full text-left text-xs text-gray-300">
+                        <thead class="bg-black/40 text-gray-400 uppercase text-[10px] sticky top-0">
+                            <tr>
+                                <th class="py-2 px-3">Thành viên</th>
+                                <th class="py-2 px-3">Username</th>
+                                <th class="py-2 px-3">User ID</th>
+                                <th class="py-2 px-3">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="members-table-body" class="divide-y divide-borderglass">
+                            <tr>
+                                <td colspan="4" class="py-8 text-center text-gray-500">Chưa có dữ liệu. Chọn nhóm nguồn và bấm Bắt đầu quét.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: TỔNG QUAN QUẢNG CÁO -->
+        <section id="tab-ads-overview" class="tab-content hidden space-y-4">
+            <h2 class="text-lg font-bold text-white tracking-tight">Tổng quan quảng cáo</h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="glass-card p-4 rounded-xl border border-borderglass">
+                    <div class="text-xs text-gray-400 mb-1">Tổng lượt xem</div>
+                    <div id="ads-stat-views" class="text-2xl font-bold text-white">0</div>
+                </div>
+
+                <div class="glass-card p-4 rounded-xl border border-borderglass">
+                    <div class="text-xs text-gray-400 mb-1">Ngân sách dự kiến</div>
+                    <div id="ads-stat-budget" class="text-2xl font-bold text-emerald-400">$0.00</div>
+                </div>
+
+                <div class="glass-card p-4 rounded-xl border border-borderglass flex flex-col justify-between">
+                    <div class="text-xs text-gray-400 mb-2">Khởi tạo chiến dịch mới</div>
+                    <button onclick="switchTab('ads-creator')" class="px-4 py-2 rounded-lg bg-gradient-to-r from-neonpurple to-neonblue text-white text-xs font-medium flex items-center justify-center gap-1.5">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tạo chiến dịch
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: TẠO CHIẾN DỊCH QUẢNG CÁO -->
+        <section id="tab-ads-creator" class="tab-content hidden space-y-4">
+            <h2 class="text-lg font-bold text-white tracking-tight">Tạo chiến dịch</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <!-- Khung Soạn thảo -->
+                <form id="campaign-form" class="md:col-span-3 glass-card p-5 rounded-xl border border-borderglass space-y-3.5" onsubmit="submitCampaign(event)">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Tên chiến dịch *</label>
+                        <input type="text" id="camp-name" required placeholder="Nhập tên chiến dịch..." class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Kênh đăng bài *</label>
+                        <div id="camp-channels-container" class="max-h-32 overflow-y-auto space-y-1.5 p-2 bg-black/40 border border-borderglass rounded-lg text-xs">
+                            <div class="text-gray-500">Đang tải danh sách kênh...</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-medium text-gray-300">Nội dung bài viết (HTML) *</label>
+                            <div class="flex gap-1.5 text-xs">
+                                <button type="button" onclick="insertEmoji('🔥')" class="hover:scale-110">🔥</button>
+                                <button type="button" onclick="insertEmoji('🚀')" class="hover:scale-110">🚀</button>
+                                <button type="button" onclick="insertEmoji('💎')" class="hover:scale-110">💎</button>
+                                <button type="button" onclick="insertEmoji('👉')" class="hover:scale-110">👉</button>
+                            </div>
+                        </div>
+                        <textarea id="camp-content" required rows="4" oninput="updatePreview()" placeholder="Soạn nội dung bài viết..." class="w-full bg-black/40 border border-borderglass rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-neonpurple"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-300 mb-1">Liên kết đích</label>
+                            <input type="url" id="camp-link" oninput="updatePreview()" placeholder="https://..." class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-300 mb-1">Ảnh / Video đính kèm</label>
+                            <input type="file" id="camp-media" accept="image/*,video/*" onchange="previewMedia(this)" class="w-full bg-black/40 border border-borderglass rounded-lg px-2.5 py-1 text-xs text-gray-400 file:mr-2 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-xs file:bg-neonpurple/30 file:text-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-300 mb-1">Ngày đăng</label>
+                            <input type="date" id="camp-date" class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-300 mb-1">Giờ đăng</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <select id="camp-hour" onchange="updateCampTime()" class="w-full bg-black/40 border border-borderglass rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                                </select>
+                                <select id="camp-minute" onchange="updateCampTime()" class="w-full bg-black/40 border border-borderglass rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                                </select>
+                            </div>
+                            <input type="hidden" id="camp-time">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2.5 border-t border-borderglass">
+                        <button type="button" onclick="submitCampaignForm('DRAFT')" class="px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-xs font-medium text-gray-300">
+                            Lưu nháp
+                        </button>
+                        <button type="button" onclick="submitCampaignForm('SCHEDULED')" class="px-4 py-1.5 rounded-lg bg-gradient-to-r from-neonpurple to-neonblue text-white font-medium text-xs">
+                            Lên lịch đăng
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Xem trước bài đăng -->
+                <div class="md:col-span-2 space-y-2.5">
+                    <div class="text-xs font-medium text-gray-400 flex items-center gap-1.5">
+                        <i data-lucide="eye" class="w-3.5 h-3.5"></i> Xem trước trên Telegram
+                    </div>
+
+                    <div class="glass-card rounded-xl p-4 border border-borderglass bg-[#18222d]">
+                        <div class="flex items-center gap-2.5 pb-2.5 border-b border-white/5">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-neonpurple to-neonblue flex items-center justify-center font-bold text-white text-xs">
+                                TG
+                            </div>
+                            <div>
+                                <div class="text-xs font-semibold text-white">Kênh Telegram</div>
+                                <div class="text-[10px] text-gray-400">12:30</div>
+                            </div>
+                        </div>
+
+                        <div id="preview-media-box" class="hidden mt-3 rounded-lg overflow-hidden max-h-48 bg-black/50 flex items-center justify-center">
+                            <img id="preview-img" src="" class="hidden w-full h-auto object-cover">
+                            <video id="preview-video" controls class="hidden w-full h-auto max-h-48"></video>
+                        </div>
+
+                        <div id="preview-text" class="mt-3 text-xs text-gray-200 whitespace-pre-line leading-relaxed">
+                            Nội dung bài viết hiển thị tại đây...
+                        </div>
+
+                        <div id="preview-link-btn" class="hidden mt-3">
+                            <a href="#" target="_blank" class="block w-full text-center py-1.5 px-3 rounded-lg bg-[#2a394a] text-sky-400 font-medium text-xs hover:bg-[#33465b]">
+                                Mở liên kết ↗
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: QUẢNG BÁ KÊNH -->
+        <section id="tab-channel-promo" class="tab-content hidden space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold text-white tracking-tight">Quản lý chiến dịch</h2>
+                <button onclick="loadCampaignsList()" class="px-3 py-1.5 rounded-lg glass-card hover:bg-white/10 text-xs text-gray-300 flex items-center gap-1.5">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Làm mới
+                </button>
+            </div>
+
+            <div class="glass-card p-4 rounded-xl border border-borderglass">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-gray-300">
+                        <thead class="bg-black/40 text-gray-400 uppercase text-[10px]">
+                            <tr>
+                                <th class="py-2 px-3">Chiến dịch</th>
+                                <th class="py-2 px-3">Lịch đăng</th>
+                                <th class="py-2 px-3">Trạng thái</th>
+                                <th class="py-2 px-3 text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="campaigns-table-body" class="divide-y divide-borderglass">
+                            <tr>
+                                <td colspan="4" class="py-6 text-center text-gray-500">Đang tải chiến dịch...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 6: LÊN LỊCH TỰ ĐỘNG (SCHEDULER) -->
+        <section id="tab-ads-scheduler" class="tab-content hidden space-y-4">
+            <h2 class="text-lg font-bold text-white tracking-tight">Lịch phát sóng</h2>
+
+            <div class="glass-card p-4 rounded-xl border border-borderglass">
+                <div id="scheduler-events-list" class="space-y-2.5 text-xs">
+                    <div class="text-gray-500 text-center py-6">Đang tải lịch trình...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 7: LỊCH SỬ CHIẾN DỊCH -->
+        <section id="tab-ads-history" class="tab-content hidden space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold text-white tracking-tight">Lịch sử đăng bài</h2>
+                <button onclick="exportHistoryCsv()" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs font-medium hover:bg-emerald-600/35 flex items-center gap-1.5">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> Xuất CSV
+                </button>
+            </div>
+
+            <div class="glass-card p-4 rounded-xl border border-borderglass space-y-3.5">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-2">
+                        <input type="text" id="history-search" oninput="loadHistory()" placeholder="Tìm theo chiến dịch hoặc kênh..." class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                    </div>
+                    <div>
+                        <select id="history-status-filter" onchange="loadHistory()" class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="SUCCESS">Thành công</option>
+                            <option value="FAILED">Thất bại</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-gray-300">
+                        <thead class="bg-black/40 text-gray-400 uppercase text-[10px]">
+                            <tr>
+                                <th class="py-2 px-3">Mã</th>
+                                <th class="py-2 px-3">Chiến dịch</th>
+                                <th class="py-2 px-3">Kênh đích</th>
+                                <th class="py-2 px-3">Thời gian</th>
+                                <th class="py-2 px-3">Trạng thái</th>
+                                <th class="py-2 px-3">Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body" class="divide-y divide-borderglass">
+                            <tr>
+                                <td colspan="6" class="py-6 text-center text-gray-500">Đang tải lịch sử...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 8: TELEGRAM ADS CHÍNH THỨC -->
+        <section id="tab-ads-official" class="tab-content hidden space-y-4">
+            <h2 class="text-lg font-bold text-white tracking-tight">Cổng Telegram Ads</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="glass-card p-5 rounded-xl border border-borderglass flex flex-col justify-between space-y-4">
+                    <div class="space-y-2">
+                        <h3 class="text-sm font-semibold text-white">Telegram Ads Platform</h3>
+                        <p class="text-xs text-gray-400 leading-relaxed">
+                            Truy cập trực tiếp hệ thống quản trị quảng cáo tài trợ của Telegram để thiết lập chiến dịch hiển thị trên các kênh công khai và quản lý ngân sách TON.
+                        </p>
+                    </div>
+                    <div>
+                        <a href="https://promote.telegram.org" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-neonblue to-neonpurple text-white font-medium text-xs hover:opacity-90 transition-all">
+                            <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Mở promote.telegram.org
+                        </a>
+                    </div>
+                </div>
+
+                <div class="glass-card p-5 rounded-xl border border-borderglass space-y-3">
+                    <h3 class="text-sm font-semibold text-white">Tính nhẩm CPM & Lượt hiển thị</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">CPM (€ / 1.000 views)</label>
+                            <input type="number" id="calc-cpm" value="1.5" step="0.1" oninput="calculateEstimates()" class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Ngân sách (€)</label>
+                            <input type="number" id="calc-budget" value="100" step="10" oninput="calculateEstimates()" class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-white">
+                        </div>
+                    </div>
+                    <div class="p-3 bg-white/[0.03] rounded-lg border border-borderglass flex items-center justify-between">
+                        <span class="text-xs text-gray-400">Lượt hiển thị dự kiến:</span>
+                        <span id="calc-result" class="text-base font-bold text-emerald-400 font-mono">~66,666 views</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL 1: GỬI THÀNH VIÊN VÀO TELEGRAM -->
+    <div id="modal-send-tg" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card p-6 rounded-2xl border border-borderglass max-w-md w-full space-y-4">
+            <h3 class="text-base font-bold text-white">Gửi danh sách thành viên vào Telegram</h3>
+            <p class="text-xs text-gray-400">
+                Danh sách thành viên sẽ được gửi chia thành từng tin (50 người/tin), kèm liên kết trực tiếp tới trang cá nhân.
+            </p>
+            <div>
+                <label class="block text-xs font-semibold text-gray-300 mb-1">Nơi nhận tin nhắn:</label>
+                <input type="text" id="send-tg-target" placeholder="Nhập @username, ID hoặc để trống để gửi vào Tin nhắn đã lưu" class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-2 text-xs text-white">
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <button onclick="closeSendTgModal()" class="px-4 py-2 rounded-lg bg-white/10 text-xs text-gray-300 hover:bg-white/15">Hủy</button>
+                <button onclick="confirmSendTg()" id="btn-confirm-send" class="px-4 py-2 rounded-lg bg-gradient-to-r from-neonpurple to-neonblue text-white text-xs font-medium">Bắt đầu gửi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: QUẢN LÝ & THÊM TÀI KHOẢN TELEGRAM -->
+    <div id="modal-accounts" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card p-6 rounded-2xl border border-borderglass max-w-lg w-full space-y-5">
+            <div class="flex items-center justify-between border-b border-borderglass pb-3">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="users" class="w-5 h-5 text-neonpurple"></i>
+                    <h3 class="text-base font-bold text-white">Quản lý Tài Khoản Telegram</h3>
+                </div>
+                <button onclick="closeAccountsModal()" class="text-gray-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Tab chọn chế độ: Danh sách đã lưu / Đăng nhập tài khoản mới -->
+            <div class="flex border-b border-borderglass text-xs">
+                <button onclick="switchAccountTab('list')" id="btn-acc-tab-list" class="flex-1 py-2 font-semibold text-neonpurple border-b-2 border-neonpurple">
+                    Tài khoản đã lưu (<span id="acc-saved-count">0</span>)
+                </button>
+                <button onclick="switchAccountTab('new')" id="btn-acc-tab-new" class="flex-1 py-2 font-semibold text-gray-400 hover:text-white">
+                    + Đăng nhập tài khoản mới
+                </button>
+            </div>
+
+            <!-- Vùng Danh sách tài khoản đã lưu -->
+            <div id="acc-tab-content-list" class="space-y-3 max-h-64 overflow-y-auto pr-1">
+                <div id="accounts-list-container" class="space-y-2">
+                    <div class="text-center py-6 text-gray-500 italic text-xs">Đang tải danh sách tài khoản...</div>
+                </div>
+            </div>
+
+            <!-- Vùng Đăng nhập tài khoản mới -->
+            <div id="acc-tab-content-new" class="hidden space-y-4">
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1">Số điện thoại Telegram:</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="new-acc-phone" placeholder="ví dụ: 0339111172" class="flex-1 bg-black/40 border border-borderglass rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-neonpurple">
+                            <button onclick="sendLoginCode()" id="btn-send-code" class="px-3 py-2 rounded-lg bg-neonpurple/30 hover:bg-neonpurple/50 text-white text-xs font-medium whitespace-nowrap">
+                                Gửi mã OTP
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="otp-input-group" class="hidden space-y-3 border-t border-borderglass pt-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Mã xác thực Telegram (OTP):</label>
+                            <input type="text" id="new-acc-otp" placeholder="ví dụ: 12345" class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-neonpurple">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Mật khẩu 2 bước (2FA):</label>
+                            <input type="password" id="new-acc-pass" placeholder="Để trống nếu không cài 2FA" class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-neonpurple">
+                        </div>
+
+                        <button onclick="verifyLoginCode()" id="btn-verify-code" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-neonpurple to-neonblue text-white text-xs font-medium neon-glow-purple">
+                            Xác nhận đăng nhập & Lưu tài khoản
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t border-borderglass">
+                <button onclick="closeAccountsModal()" class="px-4 py-2 rounded-lg bg-white/10 text-xs text-gray-300 hover:bg-white/15">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY KÍCH HOẠT MÃ MÁY TÍNH (HWID LICENSE LOCK) -->
+    <div id="modal-license-lock" class="fixed inset-0 bg-[#0a0b14]/95 backdrop-blur-xl z-50 flex items-center justify-center p-4">
+        <div class="glass-card p-7 rounded-2xl border border-neonpurple/50 max-w-lg w-full space-y-5 shadow-2xl relative overflow-hidden">
+            <div class="text-center space-y-1.5">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-neonpurple to-neonblue mx-auto flex items-center justify-center neon-glow-purple mb-3">
+                    <i data-lucide="shield-check" class="w-7 h-7 text-white"></i>
+                </div>
+                <h2 class="text-xl font-bold text-white tracking-wide">KÍCH HOẠT BẢN QUYỀN</h2>
+                <p id="license-lock-reason" class="text-xs text-purple-300">Vui lòng kích hoạt bản quyền để sử dụng toàn bộ tính năng phần mềm.</p>
+            </div>
+
+            <!-- Khung Mã Thiết Bị -->
+            <div class="p-4 rounded-xl bg-black/60 border border-neonpurple/30 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-gray-300 flex items-center gap-1.5">
+                        <i data-lucide="laptop" class="w-3.5 h-3.5 text-neonblue"></i> Mã thiết bị (HWID):
+                    </span>
+                    <button onclick="copyHwid()" id="btn-copy-hwid" class="px-2.5 py-1 rounded bg-neonpurple/20 hover:bg-neonpurple/40 text-neonpurple text-xs font-semibold flex items-center gap-1 transition-all">
+                        <i data-lucide="copy" class="w-3 h-3"></i> Sao chép
+                    </button>
+                </div>
+                <div id="display-hwid" class="text-lg font-mono font-bold text-emerald-400 tracking-wider select-all text-center py-1">
+                    Đang nạp mã...
+                </div>
+            </div>
+
+            <!-- Các bước hướng dẫn kích hoạt -->
+            <div class="space-y-3">
+                <div class="text-xs text-gray-300 space-y-1">
+                    <p><b class="text-white">Bước 1:</b> Sao chép mã thiết bị ở trên gửi cho bộ phận hỗ trợ để nhận khóa bản quyền.</p>
+                </div>
+
+                <a id="btn-send-hwid-tg" href="https://t.me/hoang1793" target="_blank" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-neonblue to-neonpurple text-white text-xs font-bold flex items-center justify-center gap-2 neon-glow-blue hover:opacity-90 transition-all">
+                    <i data-lucide="send" class="w-4 h-4"></i> Liên hệ kích hoạt bản quyền (@hoang1793)
+                </a>
+
+                <div class="border-t border-borderglass pt-3 space-y-2">
+                    <label class="block text-xs font-semibold text-gray-300">
+                        <b class="text-white">Bước 2:</b> Nhập khóa bản quyền (License Key):
+                    </label>
+                    <textarea id="input-license-key" rows="2" placeholder="Dán mã bản quyền vào đây..." class="w-full bg-black/50 border border-borderglass rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-neonpurple font-mono"></textarea>
+                    
+                    <button onclick="activateLicense()" id="btn-activate-license" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="key" class="w-4 h-4"></i> Kích hoạt phần mềm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT XỬ LÝ TOÀN BỘ LOGIC -->
+    <script>
+        lucide.createIcons();
+
+        let chartInstance = null;
+        let selectedChannels = [];
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200',
+                error: 'bg-red-950/90 border-red-500/50 text-red-200',
+                info: 'bg-purple-950/90 border-neonpurple/50 text-purple-200'
+            };
+            toast.className = `p-3 rounded-xl border ${colors[type] || colors.info} text-xs shadow-xl backdrop-blur-md transition-all duration-300 transform translate-y-2 pointer-events-auto`;
+            toast.innerHTML = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-[-10px]');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active-tab'));
+            
+            const target = document.getElementById(`tab-${tabName}`);
+            const btn = document.getElementById(`btn-tab-${tabName}`);
+            if (target) target.classList.remove('hidden');
+            if (btn) btn.classList.add('active-tab');
+
+            if (tabName === 'dashboard' || tabName === 'ads-overview') loadDashboardMetrics();
+            if (tabName === 'member-filter') {
+                loadMyGroups();
+                loadScrapeHistoryStats();
+            }
+            if (tabName === 'ads-creator') { loadAdminChannels(); initCampDateTime(); }
+            if (tabName === 'channel-promo') loadCampaignsList();
+            if (tabName === 'ads-scheduler') loadScheduler();
+            if (tabName === 'ads-history') loadHistory();
+        }
+
+        async function loadMyGroups() {
+            try {
+                const res = await fetch('/api/my_groups');
+                const data = await res.json();
+                const select = document.getElementById('select-my-groups');
+                const exSelect = document.getElementById('select-exclude-groups');
+                if (!data.groups || data.groups.length === 0) {
+                    select.innerHTML = '<option value="">(Không tìm thấy nhóm nào trong tài khoản)</option>';
+                    if (exSelect) exSelect.innerHTML = '<option value="">-- Không có nhóm nào --</option>';
+                    return;
+                }
+                const optionsHtml = data.groups.map(g => `
+                    <option value="${g.id}">${escapeHtml(g.title)} (${g.participants_count ? g.participants_count + ' thành viên' : 'Nhóm'})</option>
+                `).join('');
+                select.innerHTML = '<option value="">-- Chọn từ nhóm đã tham gia --</option>' + optionsHtml;
+                if (exSelect) {
+                    exSelect.innerHTML = '<option value="">-- Không loại trừ nhóm nào --</option>' + optionsHtml;
+                }
+                loadScrapeHistoryStats();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function onSelectMyGroup(el) {
+            if (el.value) {
+                const exVal = document.getElementById('scrape-exclude-group') ? document.getElementById('scrape-exclude-group').value.trim() : '';
+                if (exVal && exVal === el.value) {
+                    showToast('Nhóm cần cào đang trùng với nhóm loại trừ! Vui lòng chọn 2 nhóm khác nhau.', 'error');
+                }
+                document.getElementById('scrape-source-group').value = el.value;
+                const selectedText = el.options[el.selectedIndex].text;
+                showToast(`Đã chọn nhóm: ${selectedText}`, 'info');
+            }
+        }
+
+        function onSelectExcludeGroup(el) {
+            const srcVal = document.getElementById('scrape-source-group') ? document.getElementById('scrape-source-group').value.trim() : '';
+            if (el.value && srcVal && el.value === srcVal) {
+                showToast('Nhóm loại trừ không được trùng với nhóm cần cào!', 'error');
+                el.value = '';
+                document.getElementById('scrape-exclude-group').value = '';
+                return;
+            }
+            document.getElementById('scrape-exclude-group').value = el.value || '';
+            if (el.value) {
+                const selectedText = el.options[el.selectedIndex].text;
+                showToast(`Sẽ loại trừ thành viên của: ${selectedText}`, 'info');
+            }
+        }
+
+        // --- KIỂM TRA KẾT NỐI & TÀI KHOẢN ---
+        async function checkConnection() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                if (data.connected) {
+                    document.getElementById('tele-user-name').innerText = data.first_name || 'Người dùng';
+                    document.getElementById('tele-user-phone').innerText = data.phone || 'Đã kết nối';
+                    document.getElementById('tele-status-dot').className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse';
+                } else {
+                    document.getElementById('tele-user-name').innerText = 'Chưa đăng nhập';
+                    document.getElementById('tele-user-phone').innerText = 'Bấm Đổi tài khoản để thêm';
+                    document.getElementById('tele-status-dot').className = 'w-2.5 h-2.5 rounded-full bg-red-500';
+                    if (!window._hasCheckedLoginOnce) {
+                        window._hasCheckedLoginOnce = true;
+                        setTimeout(() => {
+                            openAccountsModal();
+                            switchAccountTab('new');
+                        }, 600);
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // --- QUẢN LÝ ĐA TÀI KHOẢN MODAL ---
+        function openAccountsModal() {
+            document.getElementById('modal-accounts').classList.remove('hidden');
+            loadAccountsList();
+        }
+
+        function closeAccountsModal() {
+            document.getElementById('modal-accounts').classList.add('hidden');
+        }
+
+        function switchAccountTab(tab) {
+            const listBtn = document.getElementById('btn-acc-tab-list');
+            const newBtn = document.getElementById('btn-acc-tab-new');
+            const listContent = document.getElementById('acc-tab-content-list');
+            const newContent = document.getElementById('acc-tab-content-new');
+
+            if (tab === 'list') {
+                listBtn.className = 'flex-1 py-2 font-semibold text-neonpurple border-b-2 border-neonpurple';
+                newBtn.className = 'flex-1 py-2 font-semibold text-gray-400 hover:text-white';
+                listContent.classList.remove('hidden');
+                newContent.classList.add('hidden');
+                loadAccountsList();
+            } else {
+                newBtn.className = 'flex-1 py-2 font-semibold text-neonpurple border-b-2 border-neonpurple';
+                listBtn.className = 'flex-1 py-2 font-semibold text-gray-400 hover:text-white';
+                newContent.classList.remove('hidden');
+                listContent.classList.add('hidden');
+            }
+        }
+
+        async function loadAccountsList() {
+            try {
+                const res = await fetch('/api/accounts');
+                const data = await res.json();
+                const container = document.getElementById('accounts-list-container');
+                const countBadge = document.getElementById('acc-saved-count');
+                countBadge.innerText = (data.accounts || []).length;
+
+                if (!data.accounts || data.accounts.length === 0) {
+                    container.innerHTML = '<div class="text-center py-6 text-gray-500 italic text-xs">Chưa có tài khoản nào được lưu. Bấm sang tab Đăng nhập mới.</div>';
+                    return;
+                }
+
+                container.innerHTML = data.accounts.map(acc => {
+                    const isActive = acc.session_name === data.active_session;
+                    return `
+                        <div class="p-3 rounded-xl border ${isActive ? 'border-neonpurple/50 bg-neonpurple/10' : 'border-borderglass bg-black/30'} flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full ${isActive ? 'bg-neonpurple' : 'bg-white/10'} flex items-center justify-center font-bold text-xs text-white">
+                                    ${(acc.name || 'TG').charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-xs text-white flex items-center gap-2">
+                                        <span>${escapeHtml(acc.name || 'Người dùng')}</span>
+                                        ${isActive ? '<span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-mono font-bold">ĐANG DÙNG</span>' : ''}
+                                    </div>
+                                    <div class="text-[11px] text-gray-400 font-mono">${acc.phone}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                ${!isActive ? `
+                                    <button onclick="switchActiveAccount('${acc.session_name}')" class="px-2.5 py-1 rounded bg-neonpurple/20 hover:bg-neonpurple/40 text-neonpurple text-xs font-medium transition-all">
+                                        Chọn dùng
+                                    </button>
+                                    <button onclick="deleteSavedAccount('${acc.session_name}')" title="Xóa tài khoản" class="p-1 rounded text-gray-500 hover:text-red-400">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                ` : `
+                                    <button onclick="logoutCurrentAccount('${acc.session_name}')" title="Đăng xuất" class="px-2.5 py-1 rounded bg-red-500/20 hover:bg-red-500/40 text-red-400 text-xs font-medium flex items-center gap-1 transition-all">
+                                        <i data-lucide="log-out" class="w-3 h-3"></i> Đăng xuất
+                                    </button>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                lucide.createIcons();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function resetAndReloadAllAccountData() {
+            // 1. Reset dropdown nhóm và ô nhập nhóm cào
+            const selectGroups = document.getElementById('select-my-groups');
+            if (selectGroups) {
+                selectGroups.innerHTML = '<option value="">-- Đang đồng bộ danh sách nhóm của tài khoản mới... --</option>';
+            }
+            const sourceInput = document.getElementById('scrape-source-group');
+            if (sourceInput) sourceInput.value = '';
+
+            // 2. Reset bảng kết quả cào mem của tài khoản cũ
+            const tbody = document.getElementById('members-table-body');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-gray-500 italic">Đã chuyển tài khoản. Chọn nhóm để tiếp tục quét.</td></tr>';
+            }
+            const counter = document.getElementById('members-count');
+            if (counter) counter.innerText = '0';
+            const scrapeCounter = document.getElementById('scrape-counter');
+            if (scrapeCounter) scrapeCounter.innerText = '0';
+
+            // 3. Tải lại toàn bộ dữ liệu mới của tài khoản đang dùng
+            checkConnection();
+            loadAccountsList();
+            loadMyGroups();
+            loadAdminChannels();
+            loadDashboardMetrics();
+        }
+
+        async function switchActiveAccount(sessionName) {
+            showToast('Đang chuyển đổi tài khoản...', 'info');
+            try {
+                const res = await fetch('/api/accounts/switch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_name: sessionName })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`Đã chuyển sang tài khoản: ${data.name || data.phone}`, 'success');
+                    resetAndReloadAllAccountData();
+                } else {
+                    showToast(data.reason || 'Không thể chuyển tài khoản', 'error');
+                }
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        async function sendLoginCode() {
+            const phone = document.getElementById('new-acc-phone').value.trim();
+            if (!phone) return showToast('Vui lòng nhập số điện thoại!', 'error');
+
+            const btn = document.getElementById('btn-send-code');
+            btn.disabled = true;
+            btn.innerText = 'Đang gửi mã...';
+
+            fetch('/api/heartbeat').catch(() => {});
+
+            try {
+                const res = await fetch('/api/accounts/send_code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone })
+                });
+                const data = await res.json();
+                if (data.error) {
+                    showToast(data.error, 'error');
+                } else {
+                    showToast(`Đã gửi mã xác nhận đến Telegram của số: ${data.phone}`, 'success');
+                    document.getElementById('otp-input-group').classList.remove('hidden');
+                }
+            } catch (e) {
+                showToast('Lỗi gửi mã OTP: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Gửi lại mã';
+            }
+        }
+
+        async function verifyLoginCode() {
+            const code = document.getElementById('new-acc-otp').value.trim();
+            const password = document.getElementById('new-acc-pass').value.trim();
+            if (!code) return showToast('Vui lòng nhập mã OTP nhận được!', 'error');
+
+            const btn = document.getElementById('btn-verify-code');
+            btn.disabled = true;
+            btn.innerText = 'Đang xác thực...';
+
+            try {
+                const res = await fetch('/api/accounts/verify_code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, password })
+                });
+                const data = await res.json();
+                if (data.error) {
+                    showToast(data.error, 'error');
+                } else if (data.status === 'password_needed') {
+                    showToast(data.message, 'error');
+                } else if (data.status === 'success') {
+                    showToast(`Đăng nhập thành công tài khoản: ${data.name}!`, 'success');
+                    switchAccountTab('list');
+                    resetAndReloadAllAccountData();
+                }
+            } catch (e) {
+                showToast(e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Xác nhận đăng nhập & Lưu tài khoản';
+            }
+        }
+
+        async function deleteSavedAccount(sessionName) {
+            if (!confirm('Bạn có chắc chắn muốn xóa tài khoản này khỏi danh sách?')) return;
+            try {
+                await fetch('/api/accounts/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_name: sessionName })
+                });
+                showToast('Đã xóa tài khoản!', 'info');
+                resetAndReloadAllAccountData();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        // --- DASHBOARD METRICS ---
+        async function loadDashboardMetrics() {
+            try {
+                const res = await fetch('/api/ads/dashboard');
+                const data = await res.json();
+                const m = data.metrics;
+
+                document.getElementById('stat-total-campaigns').innerText = m.total_campaigns;
+                document.getElementById('stat-active-campaigns').innerText = m.active_campaigns;
+                document.getElementById('stat-scheduled-campaigns').innerText = m.scheduled_campaigns;
+                document.getElementById('stat-completed-campaigns').innerText = m.completed_campaigns;
+                
+                const adsViews = document.getElementById('ads-stat-views');
+                if (adsViews) adsViews.innerText = m.total_views.toLocaleString();
+                const adsBudget = document.getElementById('ads-stat-budget');
+                if (adsBudget) adsBudget.innerText = '$' + m.total_budget.toFixed(2);
+
+                renderChart(m.chart_data);
+
+                const logsList = document.getElementById('recent-logs-list');
+                if (data.logs && data.logs.length > 0) {
+                    logsList.innerHTML = data.logs.map(log => `
+                        <div class="p-2.5 rounded-lg bg-black/30 border border-borderglass">
+                            <div class="flex items-center justify-between text-[10px] text-gray-500">
+                                <span class="font-semibold text-neonpurple">${log.action}</span>
+                                <span>${log.created_at}</span>
+                            </div>
+                            <div class="text-gray-200 mt-1">${escapeHtml(log.message)}</div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderChart(data) {
+            const ctx = document.getElementById('performanceChart');
+            if (!ctx) return;
+
+            const labels = data && data.length > 0 ? data.map(d => d.post_date) : ['Hôm nay'];
+            const counts = data && data.length > 0 ? data.map(d => d.count) : [0];
+
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Bài đăng thành công',
+                        data: counts,
+                        borderColor: '#a855f7',
+                        backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // --- CÀO & LỌC THÀNH VIÊN ---
+        let scrapeInterval = null;
+
+        function onScrapeModeChange(mode) {
+            const box = document.getElementById('scrape-msg-limit-box');
+            if (box) {
+                if (mode === 'messages') {
+                    box.classList.remove('hidden');
+                } else {
+                    box.classList.add('hidden');
+                }
+            }
+        }
+
+        async function loadScrapeHistoryStats() {
+            try {
+                const res = await fetch('/api/scrape/status', { cache: 'no-store' });
+                const data = await res.json();
+                const el = document.getElementById('scrape-history-count');
+                if (el && data.total_saved !== undefined) el.innerText = data.total_saved;
+                if (data.members && data.members.length > 0) {
+                    document.getElementById('scrape-counter').innerText = data.matched;
+                    document.getElementById('members-count').innerText = data.matched;
+                    renderMembersTable(data.members);
+                }
+            } catch (e) {}
+        }
+
+        async function clearScrapeHistory() {
+            if (!confirm('Xóa toàn bộ lịch sử thành viên đã cào? Sau khi xóa, lần cào tiếp theo sẽ không lọc trùng lịch sử cũ nữa.')) return;
+            try {
+                const res = await fetch('/api/scrape/history/clear', { method: 'POST' });
+                const data = await res.json();
+                const el = document.getElementById('scrape-history-count');
+                if (el) el.innerText = data.total_saved || 0;
+                showToast('Đã xóa lịch sử thành viên đã cào!', 'success');
+            } catch (e) {
+                showToast('Lỗi khi xóa lịch sử!', 'error');
+            }
+        }
+
+        async function startScraping() {
+            const group = document.getElementById('scrape-source-group').value.trim();
+            const excludeGroup = document.getElementById('scrape-exclude-group') ? document.getElementById('scrape-exclude-group').value.trim() : '';
+            const dedupMode = document.getElementById('scrape-dedup-mode') ? document.getElementById('scrape-dedup-mode').value : 'all';
+            const filterDays = document.getElementById('scrape-filter-days').value;
+            if (!group) return showToast('Vui lòng nhập nhóm cần cào!', 'error');
+            if (excludeGroup && excludeGroup.toLowerCase() === group.toLowerCase()) {
+                return showToast('Nhóm loại trừ không được trùng với nhóm cần cào!', 'error');
+            }
+
+            const payload = { source_group: group, exclude_group: excludeGroup, dedup_mode: dedupMode };
+            if (filterDays === 'online') {
+                payload.only_online = true;
+            } else if (filterDays) {
+                payload.filter_days = parseFloat(filterDays);
+            }
+            const nameFilt = document.getElementById('scrape-name-filter').value;
+            if (nameFilt) payload.name_filter = nameFilt;
+
+            const scrapeMode = document.getElementById('scrape-mode') ? document.getElementById('scrape-mode').value : 'members';
+            payload.scrape_mode = scrapeMode;
+            if (scrapeMode === 'messages') {
+                const limit = document.getElementById('scrape-msg-limit') ? document.getElementById('scrape-msg-limit').value : '1000';
+                payload.msg_limit = limit === 'all' ? null : (parseInt(limit, 10) || 1000);
+            }
+
+            try {
+                const res = await fetch('/api/scrape/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.error) return showToast(data.error, 'error');
+
+                showToast('Đang tiến hành quét thành viên...', 'info');
+                document.getElementById('scrape-spinner').classList.remove('hidden');
+                document.getElementById('btn-start-scrape').classList.add('hidden');
+                const btnStop = document.getElementById('btn-stop-scrape');
+                if (btnStop) {
+                    btnStop.classList.remove('hidden');
+                    btnStop.disabled = false;
+                    btnStop.innerHTML = '<i data-lucide="square" class="w-4 h-4"></i> Dừng quét';
+                    if (window.lucide) lucide.createIcons();
+                }
+
+                scrapeInterval = setInterval(pollScrapeStatus, 1500);
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        async function stopScraping() {
+            const btnStop = document.getElementById('btn-stop-scrape');
+            if (btnStop) {
+                btnStop.disabled = true;
+                btnStop.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang dừng...';
+                if (window.lucide) lucide.createIcons();
+            }
+            try {
+                await fetch('/api/scrape/stop', { method: 'POST' });
+                showToast('Đang dừng quét và tổng hợp kết quả...', 'info');
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function pollScrapeStatus() {
+            try {
+                const res = await fetch('/api/scrape/status', { cache: 'no-store' });
+                const state = await res.json();
+                document.getElementById('scrape-counter').innerText = state.matched;
+                document.getElementById('members-count').innerText = state.matched;
+                if (state.total_saved !== undefined) {
+                    const histEl = document.getElementById('scrape-history-count');
+                    if (histEl) histEl.innerText = state.total_saved;
+                }
+
+                if (state.members && state.members.length > 0) {
+                    renderMembersTable(state.members);
+                }
+
+                if (state.done || !state.is_running) {
+                    clearInterval(scrapeInterval);
+                    document.getElementById('scrape-spinner').classList.add('hidden');
+                    const btnStop = document.getElementById('btn-stop-scrape');
+                    if (btnStop) btnStop.classList.add('hidden');
+                    const btnStart = document.getElementById('btn-start-scrape');
+                    if (btnStart) {
+                        btnStart.classList.remove('hidden');
+                        btnStart.disabled = false;
+                    }
+                    if (state.error) showToast('Lỗi: ' + state.error, 'error');
+                    else {
+                        showToast(`Đã quét thành công ${state.matched} thành viên!`, 'success');
+                        loadScrapeHistoryStats();
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderMembersTable(members) {
+            const tbody = document.getElementById('members-table-body');
+            tbody.innerHTML = members.slice(0, 150).map(m => `
+                <tr class="hover:bg-white/5 transition-colors">
+                    <td class="py-2 px-3 font-medium text-neonblue">
+                        <a href="${m.profile_link}" target="_blank" class="hover:underline flex items-center gap-1">
+                            ${escapeHtml(m.full_name)}
+                        </a>
+                    </td>
+                    <td class="py-2 px-3 text-gray-400 font-mono">${m.username ? '@' + m.username : '---'}</td>
+                    <td class="py-2 px-3 text-gray-500 font-mono">${m.id}</td>
+                    <td class="py-2 px-3">
+                        <span class="px-2 py-0.5 rounded text-[10px] ${m.status.includes('Online') ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-gray-400'}">
+                            ${m.status}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function exportScraped(format) {
+            window.location.href = `/api/scrape/export/${format}`;
+        }
+
+        function openSendTgModal() {
+            document.getElementById('modal-send-tg').classList.remove('hidden');
+        }
+        function closeSendTgModal() {
+            document.getElementById('modal-send-tg').classList.add('hidden');
+        }
+
+        async function confirmSendTg() {
+            const target = document.getElementById('send-tg-target').value.trim();
+            const btn = document.getElementById('btn-confirm-send');
+            btn.disabled = true;
+            btn.innerText = 'Đang gửi...';
+
+            try {
+                const res = await fetch('/api/scrape/send_tg', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target_chat: target || 'me' })
+                });
+                const data = await res.json();
+                if (data.error) showToast(data.error, 'error');
+                else {
+                    showToast(`Đã gửi thành công ${data.total_sent} thành viên vào Telegram!`, 'success');
+                    closeSendTgModal();
+                }
+            } catch (e) {
+                showToast(e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Bắt đầu gửi';
+            }
+        }
+
+        // --- TẠO CHIẾN DỊCH ---
+        async function loadAdminChannels() {
+            try {
+                const res = await fetch('/api/channels');
+                const data = await res.json();
+                const container = document.getElementById('camp-channels-container');
+                if (!data.channels || data.channels.length === 0) {
+                    container.innerHTML = '<div class="text-gray-500 italic">Không tìm thấy kênh nào bạn có quyền Admin/Đăng bài.</div>';
+                    return;
+                }
+                container.innerHTML = data.channels.map(ch => `
+                    <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
+                        <input type="checkbox" value="${ch.id}" data-title="${escapeHtml(ch.title)}" class="channel-checkbox rounded text-neonpurple">
+                        <span class="text-white">${escapeHtml(ch.title)}</span>
+                        ${ch.username ? `<span class="text-gray-500">(@${ch.username})</span>` : ''}
+                    </label>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function insertEmoji(emoji) {
+            const textarea = document.getElementById('camp-content');
+            textarea.value += emoji;
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const text = document.getElementById('camp-content').value;
+            const link = document.getElementById('camp-link').value;
+            document.getElementById('preview-text').innerHTML = text ? text.replace(/\n/g, '<br>') : 'Nội dung quảng cáo sẽ hiển thị trực tiếp ở đây...';
+
+            const linkBtn = document.getElementById('preview-link-btn');
+            if (link) {
+                linkBtn.classList.remove('hidden');
+                linkBtn.querySelector('a').href = link;
+            } else {
+                linkBtn.classList.add('hidden');
+            }
+        }
+
+        function previewMedia(input) {
+            const file = input.files[0];
+            const box = document.getElementById('preview-media-box');
+            const img = document.getElementById('preview-img');
+            const video = document.getElementById('preview-video');
+
+            if (!file) {
+                box.classList.add('hidden');
+                return;
+            }
+
+            const url = URL.createObjectURL(file);
+            box.classList.remove('hidden');
+
+            if (file.type.startsWith('image/')) {
+                img.src = url;
+                img.classList.remove('hidden');
+                video.classList.add('hidden');
+            } else if (file.type.startsWith('video/')) {
+                video.src = url;
+                video.classList.remove('hidden');
+                img.classList.add('hidden');
+            }
+        }
+
+        function populateTimeOptions() {
+            const hSelect = document.getElementById('camp-hour');
+            const mSelect = document.getElementById('camp-minute');
+            if (!hSelect || !mSelect || hSelect.options.length > 0) return;
+
+            for (let i = 0; i < 24; i++) {
+                const val = String(i).padStart(2, '0');
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.textContent = `${val} giờ`;
+                hSelect.appendChild(opt);
+            }
+            for (let i = 0; i < 60; i++) {
+                const val = String(i).padStart(2, '0');
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.textContent = `${val} phút`;
+                mSelect.appendChild(opt);
+            }
+        }
+
+        function initCampDateTime() {
+            populateTimeOptions();
+            const now = new Date();
+            const hourEl = document.getElementById('camp-hour');
+            const minEl = document.getElementById('camp-minute');
+            const dateEl = document.getElementById('camp-date');
+
+            if (dateEl && !dateEl.value) {
+                const yyyy = now.getFullYear();
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                dateEl.value = `${yyyy}-${mm}-${dd}`;
+            }
+            if (hourEl && minEl) {
+                hourEl.value = String(now.getHours()).padStart(2, '0');
+                minEl.value = String(now.getMinutes()).padStart(2, '0');
+                updateCampTime();
+            }
+        }
+
+        function updateCampTime() {
+            const h = document.getElementById('camp-hour') ? document.getElementById('camp-hour').value : '09';
+            const m = document.getElementById('camp-minute') ? document.getElementById('camp-minute').value : '00';
+            const timeEl = document.getElementById('camp-time');
+            if (timeEl) timeEl.value = `${h}:${m}`;
+        }
+
+        async function submitCampaignForm(status) {
+            const name = document.getElementById('camp-name').value.trim();
+            const content = document.getElementById('camp-content').value.trim();
+            const link = document.getElementById('camp-link').value.trim();
+            const date = document.getElementById('camp-date').value;
+            updateCampTime();
+            const time = document.getElementById('camp-time').value || '09:00';
+            const mediaInput = document.getElementById('camp-media');
+
+            if (!name || !content) return showToast('Vui lòng điền tên chiến dịch và nội dung!', 'error');
+
+            const selectedChannels = [];
+            document.querySelectorAll('.channel-checkbox:checked').forEach(cb => {
+                selectedChannels.push({ id: cb.value, title: cb.getAttribute('data-title') });
+            });
+
+            if (selectedChannels.length === 0 && status !== 'DRAFT') {
+                return showToast('Vui lòng chọn ít nhất 1 kênh đăng bài!', 'error');
+            }
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('content', content);
+            formData.append('destination_link', link);
+            formData.append('target_channels', JSON.stringify(selectedChannels));
+            formData.append('start_date', date);
+            formData.append('start_time', time);
+            formData.append('status', status);
+
+            if (mediaInput.files[0]) {
+                formData.append('media', mediaInput.files[0]);
+            }
+
+            try {
+                const res = await fetch('/api/ads/campaigns', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await res.json();
+                if (result.error) return showToast(result.error, 'error');
+
+                showToast(`Chiến dịch đã được lưu (${status === 'DRAFT' ? 'Bản nháp' : 'Đã lên lịch'})!`, 'success');
+                switchTab('channel-promo');
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        // --- QUẢN BÁ KÊNH & ĐIỀU KHIỂN CHIẾN DỊCH ---
+        async function loadCampaignsList() {
+            try {
+                const res = await fetch('/api/ads/campaigns');
+                const data = await res.json();
+                const tbody = document.getElementById('campaigns-table-body');
+
+                if (!data.campaigns || data.campaigns.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-gray-500 italic">Chưa có chiến dịch nào.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.campaigns.map(c => `
+                    <tr class="hover:bg-white/5 transition-colors">
+                        <td class="py-3 px-3 font-medium text-white">${escapeHtml(c.name)}</td>
+                        <td class="py-3 px-3 text-gray-400 font-mono text-xs">${c.start_time || 'Chưa đặt lịch'}</td>
+                        <td class="py-3 px-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${getStatusBadge(c.status)}">
+                                ${translateStatus(c.status)}
+                            </span>
+                        </td>
+                        <td class="py-3 px-3 text-right space-x-1">
+                            ${c.status !== 'ACTIVE' && c.status !== 'COMPLETED' ? `
+                                <button onclick="campaignAction(${c.id}, 'start')" class="px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 text-[10px]">Đăng ngay</button>
+                            ` : ''}
+                            ${c.status === 'SCHEDULED' ? `
+                                <button onclick="campaignAction(${c.id}, 'pause')" class="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 text-[10px]">Tạm dừng</button>
+                            ` : ''}
+                            ${c.status === 'PAUSED' ? `
+                                <button onclick="campaignAction(${c.id}, 'resume')" class="px-2 py-1 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 text-[10px]">Tiếp tục</button>
+                            ` : ''}
+                            <button onclick="campaignAction(${c.id}, 'delete')" class="px-2 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 text-[10px]">Xóa</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function campaignAction(id, action) {
+            if (action === 'delete' && !confirm('Bạn có chắc chắn muốn xóa chiến dịch này?')) return;
+            try {
+                const res = await fetch(`/api/ads/campaigns/${id}/${action}`, { method: 'POST' });
+                const result = await res.json();
+                showToast(`Thực hiện thành công!`, 'success');
+                loadCampaignsList();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        // --- LÊN LỊCH TỰ ĐỘNG ---
+        async function loadScheduler() {
+            try {
+                const res = await fetch('/api/ads/calendar');
+                const data = await res.json();
+                const list = document.getElementById('scheduler-events-list');
+
+                if (!data.events || data.events.length === 0) {
+                    list.innerHTML = '<div class="text-gray-500 italic text-center py-6">Chưa có bài đăng nào được lên lịch.</div>';
+                    return;
+                }
+
+                list.innerHTML = data.events.map(ev => `
+                    <div class="p-3 rounded-lg bg-black/40 border border-borderglass flex items-center justify-between">
+                        <div>
+                            <div class="font-semibold text-white">${escapeHtml(ev.title)}</div>
+                            <div class="text-gray-400 text-[11px] flex items-center gap-1 mt-0.5 font-mono">
+                                <i data-lucide="clock" class="w-3 h-3 text-neonpurple"></i> ${ev.start}
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[10px] ${getStatusBadge(ev.status)}">${translateStatus(ev.status)}</span>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // --- LỊCH SỬ CHIẾN DỊCH ---
+        async function loadHistory() {
+            const search = document.getElementById('history-search').value.trim();
+            const status = document.getElementById('history-status-filter').value;
+            try {
+                const res = await fetch(`/api/ads/history?search=${encodeURIComponent(search)}&status=${encodeURIComponent(status)}`);
+                const data = await res.json();
+                const tbody = document.getElementById('history-table-body');
+
+                if (!data.history || data.history.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-gray-500 italic">Không có dữ liệu lịch sử bài đăng.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.history.map(h => `
+                    <tr class="hover:bg-white/5 transition-colors">
+                        <td class="py-2.5 px-3 text-gray-500 font-mono">#${h.id}</td>
+                        <td class="py-2.5 px-3 font-medium text-white">${escapeHtml(h.campaign_name)}</td>
+                        <td class="py-2.5 px-3 text-neonblue">${escapeHtml(h.channel_title || h.channel_id)}</td>
+                        <td class="py-2.5 px-3 text-gray-400 font-mono text-xs">${h.posted_at || h.scheduled_date || '---'}</td>
+                        <td class="py-2.5 px-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] ${h.status === 'SUCCESS' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">
+                                ${h.status === 'SUCCESS' ? 'Thành công' : 'Thất bại'}
+                            </span>
+                        </td>
+                        <td class="py-2.5 px-3 text-gray-400">${escapeHtml(h.error_message || 'Thành công')}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function exportHistoryCsv() {
+            const search = document.getElementById('history-search').value.trim();
+            const status = document.getElementById('history-status-filter').value;
+            fetch(`/api/ads/history?search=${encodeURIComponent(search)}&status=${encodeURIComponent(status)}`)
+                .then(res => res.json())
+                .then(data => {
+                    const rows = data.history || [];
+                    if (rows.length === 0) return showToast('Không có dữ liệu lịch sử để xuất!', 'info');
+                    let csvContent = '\uFEFFMã,Chiến dịch,Kênh đích,Thời gian,Trạng thái,Ghi chú\n';
+                    rows.forEach(r => {
+                        const row = [
+                            r.id,
+                            `"${(r.campaign_name || '').replace(/"/g, '""')}"`,
+                            `"${(r.channel_title || r.channel_id || '').replace(/"/g, '""')}"`,
+                            `"${r.posted_at || r.scheduled_date || ''}"`,
+                            `"${r.status === 'SUCCESS' ? 'Thành công' : 'Thất bại'}"`,
+                            `"${(r.error_message || 'Thành công').replace(/"/g, '""')}"`
+                        ];
+                        csvContent += row.join(',') + '\n';
+                    });
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `lich_su_chien_dich_${Date.now()}.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showToast('Đã xuất file báo cáo lịch sử CSV!', 'success');
+                })
+                .catch(err => showToast('Lỗi xuất báo cáo: ' + err.message, 'error'));
+        }
+
+        function calculateEstimates() {
+            const cpm = parseFloat(document.getElementById('calc-cpm').value) || 1.5;
+            const budget = parseFloat(document.getElementById('calc-budget').value) || 100;
+            const impressions = Math.floor((budget / cpm) * 1000);
+            document.getElementById('calc-result').innerText = `~${impressions.toLocaleString()} lượt hiển thị`;
+        }
+
+        function getStatusBadge(status) {
+            switch (status) {
+                case 'ACTIVE': return 'bg-emerald-500/20 text-emerald-400';
+                case 'SCHEDULED': return 'bg-yellow-500/20 text-yellow-400';
+                case 'COMPLETED': return 'bg-blue-500/20 text-blue-400';
+                case 'PAUSED': return 'bg-orange-500/20 text-orange-400';
+                case 'FAILED': return 'bg-red-500/20 text-red-400';
+                default: return 'bg-white/10 text-gray-400';
+            }
+        }
+
+        function translateStatus(status) {
+            switch (status) {
+                case 'ACTIVE': return 'Đang chạy';
+                case 'SCHEDULED': return 'Đã lên lịch';
+                case 'COMPLETED': return 'Hoàn thành';
+                case 'PAUSED': return 'Tạm dừng';
+                case 'FAILED': return 'Thất bại';
+                case 'DRAFT': return 'Bản nháp';
+                default: return status;
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str || '').replace(/[&<>"']/g, s => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[s]));
+        }
+
+        async function exitApplication() {
+            if (!confirm("Bạn có chắc chắn muốn thoát phần mềm?")) return;
+            try {
+                await fetch('/api/exit', { method: 'POST' });
+            } catch (e) {}
+            window.close();
+        }
+
+        // Tự động kiểm tra lúc khởi động
+        checkLicenseStatus();
+        checkConnection();
+        loadDashboardMetrics();
+        loadMyGroups();
+        loadScrapeHistoryStats();
+
+        // --- XỬ LÝ BẢN QUYỀN MÃ MÁY TÍNH ---
+        let currentHwid = "";
+
+        async function checkLicenseStatus() {
+            try {
+                const res = await fetch('/api/license/status');
+                const data = await res.json();
+                currentHwid = data.hwid;
+                document.getElementById('display-hwid').innerText = data.hwid;
+                
+                // Link nhắn tin kèm mã máy tính qua Telegram
+                const tgMsg = encodeURIComponent(`Chào Admin, kích hoạt giúp tôi mã thiết bị: ${data.hwid}`);
+                document.getElementById('btn-send-hwid-tg').href = `https://t.me/hoang1793?text=${tgMsg}`;
+
+                const overlay = document.getElementById('modal-license-lock');
+                if (data.is_valid) {
+                    overlay.classList.add('hidden');
+                    const expEl = document.getElementById('license-expiry-badge');
+                    if (expEl && data.expiry) {
+                        expEl.innerText = `Hạn dùng: ${data.expiry}`;
+                        expEl.classList.remove('hidden');
+                    }
+                } else {
+                    overlay.classList.remove('hidden');
+                    if (data.reason) {
+                        document.getElementById('license-lock-reason').innerText = data.reason;
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function copyHwid() {
+            if (!currentHwid) return;
+            navigator.clipboard.writeText(currentHwid);
+            const btn = document.getElementById('btn-copy-hwid');
+            btn.innerHTML = '<i data-lucide="check" class="w-3 h-3"></i> Đã chép!';
+            lucide.createIcons();
+            showToast('Đã sao chép mã máy tính vào bộ nhớ tạm!', 'success');
+            setTimeout(() => {
+                btn.innerHTML = '<i data-lucide="copy" class="w-3 h-3"></i> Sao chép';
+                lucide.createIcons();
+            }, 2000);
+        }
+
+        async function activateLicense() {
+            const key = document.getElementById('input-license-key').value.trim();
+            if (!key) return showToast('Vui lòng dán mã kích hoạt!', 'error');
+
+            const btn = document.getElementById('btn-activate-license');
+            btn.disabled = true;
+            btn.innerText = 'Đang kiểm tra...';
+
+            try {
+                const res = await fetch('/api/license/activate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    document.getElementById('modal-license-lock').classList.add('hidden');
+                    checkLicenseStatus();
+                    checkConnection();
+                    loadDashboardMetrics();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (e) {
+                showToast(e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Xác nhận Kích hoạt Bản quyền';
+            }
+        }
+        // --- HỆ THỐNG CẬP NHẬT ---
+        let _updateInfo = null;
+
+        async function checkForUpdate() {
+            try {
+                const res = await fetch('/api/update/check');
+                const data = await res.json();
+                if (data.has_update) {
+                    _updateInfo = data;
+                    document.getElementById('btn-update-badge').classList.remove('hidden');
+                    lucide.createIcons();
+                }
+            } catch (e) {
+                // Im lặng nếu lỗi mạng
+            }
+        }
+
+        function openUpdateModal() {
+            const modal = document.getElementById('modal-update');
+            modal.classList.remove('hidden');
+            if (_updateInfo) {
+                document.getElementById('update-version-info').textContent =
+                    `Hiện tại: v${_updateInfo.current} → Mới: v${_updateInfo.latest}`;
+                document.getElementById('update-changelog').textContent =
+                    _updateInfo.changelog || 'Không có ghi chú cập nhật.';
+            }
+            lucide.createIcons();
+        }
+
+        async function doUpdate() {
+            if (!_updateInfo) {
+                showToast('Chưa có bản cập nhật hợp lệ!', 'error');
+                return;
+            }
+            const btn = document.getElementById('btn-do-update');
+            btn.disabled = true;
+            btn.innerText = 'Đang tải và cài đặt...';
+            try {
+                const res = await fetch('/api/update/apply', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    btn.innerText = 'Đang khởi động lại...';
+                    waitForRestart(_updateInfo.latest, btn);
+                } else {
+                    showToast(data.message || data.error || 'Cập nhật không thành công!', 'error');
+                    btn.disabled = false;
+                    btn.innerText = 'Cập nhật ngay';
+                }
+            } catch (e) {
+                showToast('Lỗi kết nối: ' + e.message, 'error');
+                btn.disabled = false;
+                btn.innerText = 'Cập nhật ngay';
+            }
+        }
+
+        function waitForRestart(targetVersion, btn) {
+            const startedAt = Date.now();
+            const retry = () => {
+                if (Date.now() - startedAt > 120000) {
+                    showToast('Chưa tự mở lại được. Vui lòng đóng cửa sổ này rồi mở lại phần mềm.', 'error');
+                    btn.disabled = false;
+                    btn.innerText = 'Cập nhật ngay';
+                    return;
+                }
+                setTimeout(poll, 1500);
+            };
+            const poll = () => {
+                fetch('/api/heartbeat', { cache: 'no-store' })
+                    .then(r => r.json())
+                    .then(d => { if (d.version === targetVersion) location.reload(); else retry(); })
+                    .catch(retry);
+            };
+            setTimeout(poll, 5000);
+        }
+
+        // Khởi tạo giờ đăng chuẩn 24h và ngày hiện tại
+        initCampDateTime();
+
+        // ===== THEME TOGGLE (SÁNG/TỐI) =====
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isLight = html.classList.toggle('light');
+            html.classList.toggle('dark', !isLight);
+            const btn = document.getElementById('btn-theme-toggle');
+            if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+            localStorage.setItem('ttkpro_theme', isLight ? 'light' : 'dark');
+        }
+
+        function applyStoredTheme() {
+            const saved = localStorage.getItem('ttkpro_theme') || 'dark';
+            const html = document.documentElement;
+            if (saved === 'light') {
+                html.classList.add('light');
+                html.classList.remove('dark');
+                const btn = document.getElementById('btn-theme-toggle');
+                if (btn) btn.textContent = '☀️';
+            }
+        }
+
+        // ===== SNOW EFFECT (HIỆU ỨNG TUYẾT GIÁNG SINH) =====
+        let _snowRunning = false;
+        let _snowAnimId = null;
+        const _snowFlakes = [];
+
+        function toggleSnow() {
+            _snowRunning = !_snowRunning;
+            const canvas = document.getElementById('snow-canvas');
+            const btn = document.getElementById('btn-snow-toggle');
+            localStorage.setItem('ttkpro_snow', _snowRunning ? '1' : '0');
+            if (_snowRunning) {
+                canvas.classList.remove('hidden');
+                if (btn) btn.style.opacity = '1';
+                startSnow(canvas);
+            } else {
+                canvas.classList.add('hidden');
+                if (btn) btn.style.opacity = '0.45';
+                if (_snowAnimId) cancelAnimationFrame(_snowAnimId);
+            }
+        }
+
+        function startSnow(canvas) {
+            const ctx = canvas.getContext('2d');
+            function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+            resize();
+            window.addEventListener('resize', resize);
+
+            _snowFlakes.length = 0;
+            for (let i = 0; i < 60; i++) {
+                _snowFlakes.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    r: Math.random() * 2.8 + 0.8,
+                    speed: Math.random() * 0.6 + 0.25,
+                    drift: (Math.random() - 0.5) * 0.3,
+                    opacity: Math.random() * 0.5 + 0.25
+                });
+            }
+
+            function draw() {
+                if (!_snowRunning) return;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                _snowFlakes.forEach(f => {
+                    ctx.beginPath();
+                    ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(220,235,255,${f.opacity})`;
+                    ctx.fill();
+                    f.y += f.speed;
+                    f.x += f.drift;
+                    if (f.y > canvas.height + 5) {
+                        f.y = -5;
+                        f.x = Math.random() * canvas.width;
+                    }
+                    if (f.x < -5) f.x = canvas.width + 5;
+                    if (f.x > canvas.width + 5) f.x = -5;
+                });
+                _snowAnimId = requestAnimationFrame(draw);
+            }
+            draw();
+        }
+
+        function applyStoredSnow() {
+            const saved = localStorage.getItem('ttkpro_snow');
+            if (saved === '1') {
+                _snowRunning = true;
+                const canvas = document.getElementById('snow-canvas');
+                canvas.classList.remove('hidden');
+                const btn = document.getElementById('btn-snow-toggle');
+                if (btn) btn.style.opacity = '1';
+                startSnow(canvas);
+            } else {
+                const btn = document.getElementById('btn-snow-toggle');
+                if (btn) btn.style.opacity = '0.45';
+            }
+        }
+
+        // ===== ĐĂNG XUẤT TÀI KHOẢN =====
+        async function logoutCurrentAccount(sessionName) {
+            if (!confirm('Xác nhận đăng xuất khỏi tài khoản này?')) return;
+            try {
+                await fetch('/api/accounts/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_name: sessionName })
+                });
+                showToast('Đã đăng xuất tài khoản!', 'success');
+                resetAndReloadAllAccountData();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        // Khởi tạo giờ đăng chuẩn 24h và ngày hiện tại
+        initCampDateTime();
+
+        // Áp dụng chế độ giao diện và hiệu ứng đã lưu
+        applyStoredTheme();
+        applyStoredSnow();
+
+        // Kiểm tra update 1 lần sau 5 giây khi load xong
+        setTimeout(checkForUpdate, 5000);
+
+        // Gửi tín hiệu nhịp tim định kỳ: khi tắt cửa sổ trình duyệt, tiến trình ngầm sẽ tự động thoát hoàn toàn
+        setInterval(() => {
+            fetch('/api/heartbeat').catch(() => {});
+        }, 3000);
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) fetch('/api/heartbeat').catch(() => {});
+        });
+        window.addEventListener('focus', () => {
+            fetch('/api/heartbeat').catch(() => {});
+        });
+    </script>
+</body>
+</html>

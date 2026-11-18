@@ -1,4 +1,4 @@
 {
-    "version": "1.1.0",
-    "changelog": "Thêm nút Dừng quét, báo lỗi giãn cách Telegram rõ ràng, chống lùi giờ máy tính, tự cập nhật phần mềm không cần tải lại thủ công."
+    "version": "1.2.0",
+    "changelog": "Thêm lọc trùng nhóm loại trừ, chỉ cào thành viên mới chưa từng cào, giao diện mới gọn đẹp với font Be Vietnam Pro."
 }

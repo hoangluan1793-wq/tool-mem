@@ -103,10 +103,15 @@ def get_secure_index_html():
     except Exception as e:
         return f"<h3>Lỗi khởi động giao diện: {str(e)}</h3>"
 
+IS_CLOUD = bool(os.environ.get("RENDER") or os.environ.get("PORT"))
+
 # --- CHỐT CHẶN BẢO MẬT BACKEND (RSA LICENSE GUARD) ---
 @web.middleware
 async def license_guard_middleware(request, handler):
     """Bắt buộc kiểm tra chữ ký số RSA cho toàn bộ API chức năng. Chống can thiệp HTML để dùng chùa."""
+    if IS_CLOUD:
+        return await handler(request)
+
     exempt_paths = {
         "/",
         "/api/heartbeat",
@@ -138,6 +143,13 @@ async def handle_status(request):
 
 # --- QUẢN LÝ BẢN QUYỀN MÃ THIẾT BỊ ---
 async def handle_license_status(request):
+    if IS_CLOUD:
+        return web.json_response({
+            "is_valid": True,
+            "reason": "Cloud mode",
+            "expiry": "2099-12-31 23:59:59",
+            "hwid": "RENDER-CLOUD"
+        })
     is_valid, reason, expiry = verify_license()
     hwid = get_hwid()
     return web.json_response({
@@ -765,6 +777,10 @@ def ensure_desktop_shortcut():
 # --- KHỞI TẠO APP VÀ SCHEDULER ---
 async def on_startup(app):
     start_scheduler()
+    if IS_CLOUD:
+        port = int(os.environ.get("PORT", 5000))
+        print(f"[*] Telegram Toolkit Pro Cloud ready on 0.0.0.0:{port}")
+        return
     ensure_desktop_shortcut()
     asyncio.create_task(heartbeat_watcher())
     print("[*] Telegram Toolkit Pro đã sẵn sàng tại http://127.0.0.1:5000")
@@ -821,11 +837,16 @@ def create_app():
 
     return app
 
-import msvcrt
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
 
 _lock_file = None
 def acquire_single_instance_lock():
     """Đảm bảo chỉ có DUY NHẤT 1 cửa sổ phần mềm chạy, chống mở đúp 2 cửa sổ."""
+    if IS_CLOUD or msvcrt is None:
+        return True
     global _lock_file
     lock_path = os.path.join(BASE_DIR, ".app.lock")
     try:
@@ -852,7 +873,9 @@ if __name__ == "__main__":
     shutil.rmtree(UPDATE_DIR, ignore_errors=True)
 
     try:
-        web.run_app(create_app(), host="127.0.0.1", port=5000)
+        host = "0.0.0.0" if IS_CLOUD else "127.0.0.1"
+        port = int(os.environ.get("PORT", 5000)) if IS_CLOUD else 5000
+        web.run_app(create_app(), host=host, port=port)
     except OSError as e:
         if "10048" in str(e):
             # Port 5000 đã có instance cũ chạy rồi → mở thẳng giao diện thay vì báo lỗi

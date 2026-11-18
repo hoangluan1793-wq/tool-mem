@@ -51,7 +51,16 @@ from core.telegram_client import (
 from modules.ads_manager.scheduler import (
     start_scheduler, stop_scheduler, set_campaign_status, delete_campaign, execute_campaign
 )
-from core.licensing import get_hwid, verify_license, apply_license, verify_update_signature, parse_version
+IS_CLOUD = bool(os.environ.get("RENDER") or os.environ.get("PORT"))
+
+if not IS_CLOUD:
+    from core.licensing import get_hwid, verify_license, apply_license, verify_update_signature, parse_version
+else:
+    def get_hwid(): return "RENDER-CLOUD"
+    def verify_license(): return True, "Cloud mode", "2099-12-31 23:59:59"
+    def apply_license(key): return True, "Cloud mode"
+    def verify_update_signature(v, s, sig): return False
+    def parse_version(v): return (0, 0, 0)
 
 # Xác định đường dẫn tương thích cả khi chạy code thường (.py) và khi đóng gói (.exe)
 if getattr(sys, 'frozen', False):
@@ -102,8 +111,6 @@ def get_secure_index_html():
         return zlib.decompress(base64.b64decode(EMBEDDED_HTML_B64.encode("ascii"))).decode("utf-8")
     except Exception as e:
         return f"<h3>Lỗi khởi động giao diện: {str(e)}</h3>"
-
-IS_CLOUD = bool(os.environ.get("RENDER") or os.environ.get("PORT"))
 
 # --- CHỐT CHẶN BẢO MẬT BACKEND (RSA LICENSE GUARD) ---
 @web.middleware

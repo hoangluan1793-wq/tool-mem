@@ -6,6 +6,7 @@ import html
 import re
 from datetime import datetime, timezone
 from telethon import TelegramClient, errors, types
+from telethon.sessions import StringSession, SQLiteSession
 from telethon.tl.types import (
     Channel, Chat, User,
     UserStatusOnline, UserStatusOffline,
@@ -165,6 +166,104 @@ def get_accounts_list():
         "accounts": accounts,
         "active_session": active_session
     }
+
+
+def export_all_sessions():
+    """Xuất toàn bộ tài khoản + StringSession để lưu trữ an toàn trên trình duyệt / Cloud."""
+    config = get_config()
+    accounts = config.get("accounts", [])
+    active_session = config.get("active_session", "tele_session")
+    sessions_map = {}
+
+    for acc in accounts:
+        sname = acc.get("session_name")
+        if not sname:
+            continue
+        if _client is not None and active_session == sname and _client.session and _client.session.auth_key:
+            ss = StringSession()
+            ss.set_dc(_client.session.dc_id, _client.session.server_address, _client.session.port)
+            ss.auth_key = _client.session.auth_key
+            sessions_map[sname] = ss.save()
+            continue
+
+        spath = os.path.join(SESSIONS_DIR, f"{sname}.session")
+        if not os.path.exists(spath):
+            spath = os.path.join(BASE_DIR, f"{sname}.session")
+        if os.path.exists(spath):
+            try:
+                sq = SQLiteSession(spath[:-8])
+                if sq.auth_key:
+                    ss = StringSession()
+                    ss.set_dc(sq.dc_id, sq.server_address, sq.port)
+                    ss.auth_key = sq.auth_key
+                    sessions_map[sname] = ss.save()
+                sq.close()
+            except Exception:
+                pass
+
+    return {
+        "accounts": accounts,
+        "active_session": active_session,
+        "sessions": sessions_map,
+    }
+
+
+async def restore_all_sessions(payload):
+    """Khôi phục các tài khoản + StringSession từ trình duyệt vào server."""
+    global _client, _current_session_path
+    if not isinstance(payload, dict):
+        return {"restored": 0}
+
+    accounts = payload.get("accounts") or []
+    active_session = payload.get("active_session") or ""
+    sessions_map = payload.get("sessions") or {}
+
+    if not sessions_map:
+        return {"restored": 0}
+
+    if _client and _client.is_connected():
+        try:
+            await _client.disconnect()
+        except Exception:
+            pass
+    _client = None
+    _current_session_path = DEFAULT_SESSION
+
+    restored = 0
+    valid_accounts = []
+    for acc in accounts:
+        sname = str(acc.get("session_name", "")).strip()
+        if not re.match(r'^[a-zA-Z0-9_+\-]+$', sname):
+            continue
+        s_str = sessions_map.get(sname)
+        if not s_str:
+            continue
+        try:
+            ss = StringSession(s_str)
+            if not ss.auth_key:
+                continue
+            spath = os.path.join(SESSIONS_DIR, sname)
+            sq = SQLiteSession(spath)
+            sq.set_dc(ss.dc_id, ss.server_address, ss.port)
+            sq.auth_key = ss.auth_key
+            sq.save()
+            sq.close()
+            valid_accounts.append(acc)
+            restored += 1
+        except Exception:
+            pass
+
+    if valid_accounts:
+        config = get_config()
+        config["accounts"] = valid_accounts
+        if active_session and any(a.get("session_name") == active_session for a in valid_accounts):
+            config["active_session"] = active_session
+        else:
+            config["active_session"] = valid_accounts[0]["session_name"]
+        save_config(config)
+
+    auth_res = await check_auth()
+    return {"restored": restored, **auth_res}
 
 async def switch_account(session_name):
     global _client

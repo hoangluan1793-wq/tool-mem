@@ -73,12 +73,23 @@ def init_db():
         campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
         start_time TEXT NOT NULL, -- YYYY-MM-DD HH:MM:SS
         end_time TEXT,
+        schedule_mode TEXT DEFAULT 'once', -- once | interval
+        interval_minutes INTEGER DEFAULT 0,
         is_posted INTEGER DEFAULT 0,
         retry_count INTEGER DEFAULT 0,
         max_retries INTEGER DEFAULT 3,
         last_attempt TEXT
     );
     """)
+
+    for col_sql in (
+        "ALTER TABLE campaign_schedule ADD COLUMN schedule_mode TEXT DEFAULT 'once'",
+        "ALTER TABLE campaign_schedule ADD COLUMN interval_minutes INTEGER DEFAULT 0",
+    ):
+        try:
+            cursor.execute(col_sql)
+        except sqlite3.OperationalError:
+            pass
 
     # 5. Bảng Nhật ký hoạt động (campaign_logs)
     cursor.execute("""

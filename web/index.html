@@ -194,27 +194,38 @@
     <canvas id="snow-canvas" class="hidden"></canvas>
 
     <!-- Khay thông báo Toast -->
-    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+    <div id="toast-container" class="fixed top-14 right-3 left-3 sm:left-auto sm:top-5 sm:right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- HEADER GỌN CHO ĐIỆN THOẠI / CLOUD -->
-    <header id="mobile-cloud-header" class="md:hidden glass-card border-b border-borderglass px-3.5 py-2.5 flex items-center justify-between gap-2 shrink-0 z-20">
-        <div class="flex items-center gap-2 min-w-0">
-            <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-neonpurple to-neonblue flex items-center justify-center shrink-0">
-                <i data-lucide="send" class="w-3.5 h-3.5 text-white"></i>
-            </div>
-            <div class="min-w-0">
-                <div class="flex items-center gap-1.5">
-                    <span class="font-bold text-sm text-white tracking-tight">TeleToolkit</span>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-neonpurple/20 text-purple-300 font-semibold">PRO</span>
+    <header id="mobile-cloud-header" class="md:hidden glass-card border-b border-borderglass shrink-0 z-20">
+        <div class="px-3.5 py-2.5 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+                <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-neonpurple to-neonblue flex items-center justify-center shrink-0">
+                    <i data-lucide="send" class="w-3.5 h-3.5 text-white"></i>
                 </div>
-                <div id="mobile-tele-phone" class="text-[11px] text-emerald-400 font-mono truncate">Đang kiểm tra...</div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-bold text-sm text-white tracking-tight">TeleToolkit</span>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-neonpurple/20 text-purple-300 font-semibold">PRO</span>
+                    </div>
+                    <div id="mobile-tele-phone" class="text-[11px] text-emerald-400 font-mono truncate">Đang kiểm tra...</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="openAccountsModal()" class="px-2.5 py-1.5 rounded-lg bg-neonpurple/20 hover:bg-neonpurple/30 text-purple-200 border border-neonpurple/30 text-xs font-medium flex items-center gap-1 whitespace-nowrap">
+                    <i data-lucide="user-cog" class="w-3.5 h-3.5"></i> Tài khoản
+                </button>
+                <button onclick="toggleTheme()" title="Sáng/Tối" class="w-8 h-8 rounded-lg bg-white/5 border border-borderglass flex items-center justify-center text-xs">🌙</button>
             </div>
         </div>
-        <div class="flex items-center gap-1.5 shrink-0">
-            <button onclick="openAccountsModal()" class="px-2.5 py-1.5 rounded-lg bg-neonpurple/20 hover:bg-neonpurple/30 text-purple-200 border border-neonpurple/30 text-xs font-medium flex items-center gap-1 whitespace-nowrap">
-                <i data-lucide="user-cog" class="w-3.5 h-3.5"></i> Tài khoản
+        <!-- Thanh chuyển 2 tab chính trên điện thoại / Cloud -->
+        <div id="mobile-cloud-tabs" class="grid grid-cols-2 gap-1.5 px-3 pb-2.5">
+            <button type="button" id="mob-tab-member-filter" onclick="switchTab('member-filter')" class="py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-neonpurple/25 text-white border border-neonpurple/40 transition-all">
+                <i data-lucide="users" class="w-3.5 h-3.5"></i> Quét thành viên
             </button>
-            <button onclick="toggleTheme()" title="Sáng/Tối" class="w-8 h-8 rounded-lg bg-white/5 border border-borderglass flex items-center justify-center text-xs">🌙</button>
+            <button type="button" id="mob-tab-ads-creator" onclick="switchTab('ads-creator')" class="py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-white/5 text-gray-300 border border-borderglass transition-all">
+                <i data-lucide="send" class="w-3.5 h-3.5"></i> Đăng bài tự động
+            </button>
         </div>
     </header>
 
@@ -259,12 +270,12 @@
 
                 <button onclick="switchTab('ads-creator')" id="btn-tab-ads-creator" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all">
                     <i data-lucide="plus-circle" class="w-4 h-4 text-cyan-400 shrink-0"></i>
-                    <span>Tạo chiến dịch</span>
+                    <span>Đăng bài tự động</span>
                 </button>
 
                 <button onclick="switchTab('channel-promo')" id="btn-tab-channel-promo" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all">
                     <i data-lucide="megaphone" class="w-4 h-4 text-pink-400 shrink-0"></i>
-                    <span>Quản lý chiến dịch</span>
+                    <span>Danh sách bài đăng</span>
                 </button>
 
                 <button onclick="switchTab('ads-scheduler')" id="btn-tab-ads-scheduler" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-all">
@@ -310,10 +321,10 @@
     </aside>
 
     <!-- KHU VỰC NỘI DUNG CHÍNH (MAIN CONTENT) -->
-    <main class="flex-1 flex flex-col overflow-y-auto px-5 py-4 relative">
+    <main class="flex-1 flex flex-col overflow-y-auto px-3 py-3 sm:px-5 sm:py-4 relative">
 
         <!-- Thanh trạng thái trên cùng -->
-        <div class="flex items-center justify-between pb-3 mb-3 border-b border-borderglass/60 text-xs">
+        <div id="desktop-top-bar" class="flex items-center justify-between pb-3 mb-3 border-b border-borderglass/60 text-xs">
             <div class="flex items-center gap-2">
                 <span id="license-expiry-badge" class="hidden px-2.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/25 text-[11px] font-medium text-emerald-300 font-mono"></span>
             </div>
@@ -601,28 +612,46 @@
             </div>
         </section>
 
-        <!-- TAB 4: TẠO CHIẾN DỊCH QUẢNG CÁO -->
+        <!-- TAB 4: ĐĂNG BÀI TỰ ĐỘNG VÀO NHÓM -->
         <section id="tab-ads-creator" class="tab-content hidden space-y-4">
-            <h2 class="text-lg font-bold text-white tracking-tight">Tạo chiến dịch</h2>
+            <h2 class="text-lg font-bold text-white tracking-tight">Đăng bài tự động</h2>
 
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <!-- Khung Soạn thảo -->
                 <form id="campaign-form" class="md:col-span-3 glass-card p-5 rounded-xl border border-borderglass space-y-3.5" onsubmit="submitCampaign(event)">
+                    <div id="camp-edit-banner" class="hidden flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-neonpurple/15 border border-neonpurple/35 text-xs">
+                        <span class="text-purple-200 truncate">Đang chỉnh sửa: <strong id="camp-edit-title" class="text-white"></strong></span>
+                        <button type="button" onclick="resetCampaignForm()" class="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white text-[11px] whitespace-nowrap">+ Tạo mới</button>
+                    </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-300 mb-1">Tên chiến dịch *</label>
-                        <input type="text" id="camp-name" required placeholder="Nhập tên chiến dịch..." class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Tên lịch đăng bài *</label>
+                        <input type="text" id="camp-name" required placeholder="vd: Gửi tin giới thiệu sản phẩm..." class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-medium text-gray-300 mb-1">Kênh đăng bài *</label>
-                        <div id="camp-channels-container" class="max-h-32 overflow-y-auto space-y-1.5 p-2 bg-black/40 border border-borderglass rounded-lg text-xs">
-                            <div class="text-gray-500">Đang tải danh sách kênh...</div>
+                    <div class="space-y-2">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <label class="text-xs font-medium text-gray-300">Nhóm gửi tin nhắn * <span id="camp-selected-count" class="text-neonblue font-mono">(Đã chọn: 0)</span></label>
+                            <div class="flex items-center gap-2 text-[11px]">
+                                <button type="button" onclick="toggleAllTargetGroups(true)" class="text-neonblue hover:underline">Chọn tất cả</button>
+                                <span class="text-gray-600">·</span>
+                                <button type="button" onclick="toggleAllTargetGroups(false)" class="text-gray-400 hover:text-white">Bỏ chọn</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input type="text" id="camp-group-search" oninput="filterTargetGroups()" placeholder="Tìm nhanh nhóm đã tham gia..." class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                            <div class="flex gap-1.5">
+                                <input type="text" id="camp-custom-group" placeholder="Thêm @username hoặc ID nhóm..." class="flex-1 bg-black/40 border border-borderglass rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                                <button type="button" onclick="addCustomTargetGroup()" class="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-xs text-white whitespace-nowrap">+ Thêm</button>
+                            </div>
+                        </div>
+                        <div id="camp-channels-container" class="max-h-36 overflow-y-auto space-y-1 p-2 bg-black/40 border border-borderglass rounded-lg text-xs">
+                            <div class="text-gray-500">Đang tải danh sách nhóm đã tham gia...</div>
                         </div>
                     </div>
 
                     <div>
                         <div class="flex items-center justify-between mb-1">
-                            <label class="block text-xs font-medium text-gray-300">Nội dung bài viết (HTML) *</label>
+                            <label class="block text-xs font-medium text-gray-300">Nội dung tin nhắn (HTML) *</label>
                             <div class="flex gap-1.5 text-xs">
                                 <button type="button" onclick="insertEmoji('🔥')" class="hover:scale-110">🔥</button>
                                 <button type="button" onclick="insertEmoji('🚀')" class="hover:scale-110">🚀</button>
@@ -630,12 +659,12 @@
                                 <button type="button" onclick="insertEmoji('👉')" class="hover:scale-110">👉</button>
                             </div>
                         </div>
-                        <textarea id="camp-content" required rows="4" oninput="updatePreview()" placeholder="Soạn nội dung bài viết..." class="w-full bg-black/40 border border-borderglass rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-neonpurple"></textarea>
+                        <textarea id="camp-content" required rows="4" oninput="updatePreview()" placeholder="Nhập nội dung tin nhắn tự động..." class="w-full bg-black/40 border border-borderglass rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-neonpurple"></textarea>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-medium text-gray-300 mb-1">Liên kết đích</label>
+                            <label class="block text-xs font-medium text-gray-300 mb-1">Liên kết đính kèm</label>
                             <input type="url" id="camp-link" oninput="updatePreview()" placeholder="https://..." class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
                         </div>
                         <div>
@@ -644,20 +673,49 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Thiết lập thời gian gửi -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-white/5">
                         <div>
-                            <label class="block text-xs font-medium text-gray-300 mb-1">Ngày đăng</label>
+                            <label class="block text-xs font-medium text-gray-300 mb-1">Kiểu lịch gửi</label>
+                            <select id="camp-schedule-mode" onchange="onCampScheduleModeChange(this.value)" class="w-full bg-black/40 border border-borderglass rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                                <option value="once">Gửi 1 lần đúng giờ</option>
+                                <option value="interval">Lặp lại theo chu kỳ</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-300 mb-1">Ngày bắt đầu</label>
                             <input type="date" id="camp-date" class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-300 mb-1">Giờ đăng</label>
-                            <div class="grid grid-cols-2 gap-2">
-                                <select id="camp-hour" onchange="updateCampTime()" class="w-full bg-black/40 border border-borderglass rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                            <label class="block text-xs font-medium text-gray-300 mb-1">Giờ bắt đầu</label>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <select id="camp-hour" onchange="updateCampTime()" class="w-full bg-black/40 border border-borderglass rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
                                 </select>
-                                <select id="camp-minute" onchange="updateCampTime()" class="w-full bg-black/40 border border-borderglass rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
+                                <select id="camp-minute" onchange="updateCampTime()" class="w-full bg-black/40 border border-borderglass rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-neonpurple">
                                 </select>
                             </div>
                             <input type="hidden" id="camp-time">
+                        </div>
+                    </div>
+
+                    <div id="camp-interval-box" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg bg-white/[0.03] border border-borderglass">
+                        <div>
+                            <label class="block text-xs font-medium text-cyan-300 mb-1">Chu kỳ lặp lại</label>
+                            <select id="camp-interval-preset" onchange="onIntervalPresetChange(this.value)" class="w-full bg-black/50 border border-borderglass rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-400">
+                                <option value="15">Mỗi 15 phút</option>
+                                <option value="30">Mỗi 30 phút</option>
+                                <option value="60" selected>Mỗi 1 giờ</option>
+                                <option value="120">Mỗi 2 giờ</option>
+                                <option value="240">Mỗi 4 giờ</option>
+                                <option value="360">Mỗi 6 giờ</option>
+                                <option value="720">Mỗi 12 giờ</option>
+                                <option value="1440">Mỗi 24 giờ (hàng ngày)</option>
+                                <option value="custom">Tùy chỉnh số phút...</option>
+                            </select>
+                        </div>
+                        <div id="camp-custom-interval-wrap" class="hidden">
+                            <label class="block text-xs font-medium text-gray-300 mb-1">Nhập số phút lặp lại</label>
+                            <input type="number" id="camp-interval-minutes" min="5" value="60" class="w-full bg-black/50 border border-borderglass rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-400">
                         </div>
                     </div>
 
@@ -665,42 +723,60 @@
                         <button type="button" onclick="submitCampaignForm('DRAFT')" class="px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-xs font-medium text-gray-300">
                             Lưu nháp
                         </button>
-                        <button type="button" onclick="submitCampaignForm('SCHEDULED')" class="px-4 py-1.5 rounded-lg bg-gradient-to-r from-neonpurple to-neonblue text-white font-medium text-xs">
-                            Lên lịch đăng
+                        <button type="button" id="btn-submit-schedule" onclick="submitCampaignForm('SCHEDULED')" class="px-4 py-1.5 rounded-lg bg-gradient-to-r from-neonpurple to-neonblue text-white font-medium text-xs">
+                            Bắt đầu lên lịch gửi
                         </button>
                     </div>
                 </form>
 
-                <!-- Xem trước bài đăng -->
-                <div class="md:col-span-2 space-y-2.5">
-                    <div class="text-xs font-medium text-gray-400 flex items-center gap-1.5">
-                        <i data-lucide="eye" class="w-3.5 h-3.5"></i> Xem trước trên Telegram
+                <!-- Cột phải: Xem trước + Danh sách dự án đang chạy/đã lưu -->
+                <div class="md:col-span-2 space-y-4">
+                    <div class="space-y-2">
+                        <div class="text-xs font-medium text-gray-400 flex items-center gap-1.5">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> Xem trước trên Telegram
+                        </div>
+
+                        <div class="glass-card rounded-xl p-4 border border-borderglass bg-[#18222d]">
+                            <div class="flex items-center gap-2.5 pb-2.5 border-b border-white/5">
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-neonpurple to-neonblue flex items-center justify-center font-bold text-white text-xs">
+                                    TG
+                                </div>
+                                <div>
+                                    <div class="text-xs font-semibold text-white">Kênh Telegram</div>
+                                    <div class="text-[10px] text-gray-400">12:30</div>
+                                </div>
+                            </div>
+
+                            <div id="preview-media-box" class="hidden mt-3 rounded-lg overflow-hidden max-h-44 bg-black/50 flex items-center justify-center">
+                                <img id="preview-img" src="" class="hidden w-full h-auto object-cover">
+                                <video id="preview-video" controls class="hidden w-full h-auto max-h-44"></video>
+                            </div>
+
+                            <div id="preview-text" class="mt-3 text-xs text-gray-200 whitespace-pre-line leading-relaxed">
+                                Nội dung bài viết hiển thị tại đây...
+                            </div>
+
+                            <div id="preview-link-btn" class="hidden mt-3">
+                                <a href="#" target="_blank" class="block w-full text-center py-1.5 px-3 rounded-lg bg-[#2a394a] text-sky-400 font-medium text-xs hover:bg-[#33465b]">
+                                    Mở liên kết ↗
+                                </a>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="glass-card rounded-xl p-4 border border-borderglass bg-[#18222d]">
-                        <div class="flex items-center gap-2.5 pb-2.5 border-b border-white/5">
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-neonpurple to-neonblue flex items-center justify-center font-bold text-white text-xs">
-                                TG
-                            </div>
-                            <div>
-                                <div class="text-xs font-semibold text-white">Kênh Telegram</div>
-                                <div class="text-[10px] text-gray-400">12:30</div>
-                            </div>
+                    <!-- Danh sách dự án đã tạo / đang chạy (bấm để chỉnh sửa ngay) -->
+                    <div class="glass-card p-4 rounded-xl border border-borderglass space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-white flex items-center gap-1.5">
+                                <i data-lucide="layers" class="w-3.5 h-3.5 text-neonblue"></i>
+                                Dự án đã tạo
+                            </span>
+                            <button type="button" onclick="loadRightProjectsList()" class="text-[11px] text-gray-400 hover:text-white flex items-center gap-1">
+                                <i data-lucide="refresh-cw" class="w-3 h-3"></i> Làm mới
+                            </button>
                         </div>
-
-                        <div id="preview-media-box" class="hidden mt-3 rounded-lg overflow-hidden max-h-48 bg-black/50 flex items-center justify-center">
-                            <img id="preview-img" src="" class="hidden w-full h-auto object-cover">
-                            <video id="preview-video" controls class="hidden w-full h-auto max-h-48"></video>
-                        </div>
-
-                        <div id="preview-text" class="mt-3 text-xs text-gray-200 whitespace-pre-line leading-relaxed">
-                            Nội dung bài viết hiển thị tại đây...
-                        </div>
-
-                        <div id="preview-link-btn" class="hidden mt-3">
-                            <a href="#" target="_blank" class="block w-full text-center py-1.5 px-3 rounded-lg bg-[#2a394a] text-sky-400 font-medium text-xs hover:bg-[#33465b]">
-                                Mở liên kết ↗
-                            </a>
+                        <div id="camp-right-projects-list" class="space-y-2 max-h-[340px] overflow-y-auto pr-1 text-xs">
+                            <div class="text-gray-500 text-center py-4">Chưa có dự án nào.</div>
                         </div>
                     </div>
                 </div>
@@ -1002,12 +1078,21 @@
             if (target) target.classList.remove('hidden');
             if (btn) btn.classList.add('active-tab');
 
+            const mobFilter = document.getElementById('mob-tab-member-filter');
+            const mobPost = document.getElementById('mob-tab-ads-creator');
+            if (mobFilter && mobPost) {
+                const activeCls = 'py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-neonpurple/25 text-white border border-neonpurple/40 transition-all';
+                const idleCls = 'py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-white/5 text-gray-300 border border-borderglass transition-all';
+                mobFilter.className = tabName === 'member-filter' ? activeCls : idleCls;
+                mobPost.className = tabName === 'ads-creator' ? activeCls : idleCls;
+            }
+
             if (tabName === 'dashboard' || tabName === 'ads-overview') loadDashboardMetrics();
             if (tabName === 'member-filter') {
                 loadMyGroups();
                 loadScrapeHistoryStats();
             }
-            if (tabName === 'ads-creator') { loadAdminChannels(); initCampDateTime(); }
+            if (tabName === 'ads-creator') { loadAdminChannels(); initCampDateTime(); loadRightProjectsList(); }
             if (tabName === 'channel-promo') loadCampaignsList();
             if (tabName === 'ads-scheduler') loadScheduler();
             if (tabName === 'ads-history') loadHistory();
@@ -1064,11 +1149,54 @@
             }
         }
 
+        // --- LƯU & KHÔI PHỤC TÀI KHOẢN TRÊN TRÌNH DUYỆT (CLOUD / ĐIỆN THOẠI) ---
+        async function backupSessionsToBrowser() {
+            try {
+                const res = await fetch('/api/accounts/export_sessions', { cache: 'no-store' });
+                const data = await res.json();
+                if (data && data.sessions && Object.keys(data.sessions).length > 0) {
+                    localStorage.setItem('ttkpro_saved_sessions', JSON.stringify(data));
+                } else if (data && Array.isArray(data.accounts) && data.accounts.length === 0) {
+                    localStorage.removeItem('ttkpro_saved_sessions');
+                }
+            } catch (e) {}
+        }
+
+        async function tryRestoreSessionsFromBrowser() {
+            const raw = localStorage.getItem('ttkpro_saved_sessions');
+            if (!raw) return false;
+            try {
+                const saved = JSON.parse(raw);
+                if (!saved || !saved.sessions || Object.keys(saved.sessions).length === 0) return false;
+                const res = await fetch('/api/accounts/restore_sessions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(saved)
+                });
+                const result = await res.json();
+                if (result && result.connected) {
+                    showToast(`Đã tự động đăng nhập lại: ${result.first_name || result.phone}`, 'success');
+                    return true;
+                }
+            } catch (e) {}
+            return false;
+        }
+
         // --- KIỂM TRA KẾT NỐI & TÀI KHOẢN ---
         async function checkConnection() {
             try {
                 const res = await fetch('/api/status');
-                const data = await res.json();
+                let data = await res.json();
+                if (!data.connected && !window._triedAutoRestore) {
+                    window._triedAutoRestore = true;
+                    const restored = await tryRestoreSessionsFromBrowser();
+                    if (restored) {
+                        const r2 = await fetch('/api/status');
+                        data = await r2.json();
+                        loadMyGroups();
+                        loadAdminChannels();
+                    }
+                }
                 const mobPhone = document.getElementById('mobile-tele-phone');
                 if (data.connected) {
                     document.getElementById('tele-user-name').innerText = data.first_name || 'Người dùng';
@@ -1078,6 +1206,7 @@
                         mobPhone.innerText = `${data.first_name || 'Đã kết nối'} (${data.phone || ''})`;
                         mobPhone.className = 'text-[11px] text-emerald-400 font-mono truncate';
                     }
+                    backupSessionsToBrowser();
                 } else {
                     document.getElementById('tele-user-name').innerText = 'Chưa đăng nhập';
                     document.getElementById('tele-user-phone').innerText = 'Bấm Đổi tài khoản để thêm';
@@ -1206,6 +1335,7 @@
             loadMyGroups();
             loadAdminChannels();
             loadDashboardMetrics();
+            backupSessionsToBrowser();
         }
 
         async function switchActiveAccount(sessionName) {
@@ -1578,25 +1708,89 @@
             }
         }
 
-        // --- TẠO CHIẾN DỊCH ---
+        // --- ĐĂNG BÀI TỰ ĐỘNG VÀO NHÓM ---
         async function loadAdminChannels() {
             try {
-                const res = await fetch('/api/channels');
+                const res = await fetch('/api/my_groups');
                 const data = await res.json();
                 const container = document.getElementById('camp-channels-container');
-                if (!data.channels || data.channels.length === 0) {
-                    container.innerHTML = '<div class="text-gray-500 italic">Không tìm thấy kênh nào bạn có quyền Admin/Đăng bài.</div>';
+                if (!data.groups || data.groups.length === 0) {
+                    container.innerHTML = '<div class="text-gray-500">Không tìm thấy nhóm nào trong tài khoản.</div>';
+                    updateSelectedGroupCount();
                     return;
                 }
-                container.innerHTML = data.channels.map(ch => `
-                    <label class="flex items-center gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer">
-                        <input type="checkbox" value="${ch.id}" data-title="${escapeHtml(ch.title)}" class="channel-checkbox rounded text-neonpurple">
-                        <span class="text-white">${escapeHtml(ch.title)}</span>
-                        ${ch.username ? `<span class="text-gray-500">(@${ch.username})</span>` : ''}
+                container.innerHTML = data.groups.map(g => `
+                    <label class="target-group-item flex items-center justify-between gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer" data-search="${escapeHtml((g.title + ' ' + (g.username || '') + ' ' + g.id).toLowerCase())}">
+                        <span class="flex items-center gap-2 min-w-0">
+                            <input type="checkbox" value="${g.id}" data-title="${escapeHtml(g.title)}" onchange="updateSelectedGroupCount()" class="channel-checkbox rounded text-neonpurple shrink-0">
+                            <span class="text-white truncate">${escapeHtml(g.title)}</span>
+                            ${g.username ? `<span class="text-gray-500 shrink-0">@${escapeHtml(g.username)}</span>` : ''}
+                        </span>
+                        <span class="text-[11px] text-gray-500 font-mono shrink-0">${g.participants_count ? g.participants_count + ' tv' : ''}</span>
                     </label>
                 `).join('');
+                updateSelectedGroupCount();
             } catch (err) {
                 console.error(err);
+            }
+        }
+
+        function filterTargetGroups() {
+            const q = (document.getElementById('camp-group-search')?.value || '').trim().toLowerCase();
+            document.querySelectorAll('.target-group-item').forEach(el => {
+                const hay = el.getAttribute('data-search') || '';
+                el.classList.toggle('hidden', q && !hay.includes(q));
+            });
+        }
+
+        function toggleAllTargetGroups(checked) {
+            document.querySelectorAll('.target-group-item:not(.hidden) .channel-checkbox').forEach(cb => {
+                cb.checked = checked;
+            });
+            updateSelectedGroupCount();
+        }
+
+        function updateSelectedGroupCount() {
+            const cnt = document.querySelectorAll('.channel-checkbox:checked').length;
+            const el = document.getElementById('camp-selected-count');
+            if (el) el.innerText = `(Đã chọn: ${cnt})`;
+        }
+
+        function addCustomTargetGroup() {
+            const input = document.getElementById('camp-custom-group');
+            const val = (input?.value || '').trim();
+            if (!val) return;
+            const container = document.getElementById('camp-channels-container');
+            const emptyMsg = container.querySelector('.text-gray-500:not(span)');
+            if (emptyMsg && !container.querySelector('.target-group-item')) container.innerHTML = '';
+            const label = document.createElement('label');
+            label.className = 'target-group-item flex items-center justify-between gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer';
+            label.setAttribute('data-search', val.toLowerCase());
+            label.innerHTML = `
+                <span class="flex items-center gap-2 min-w-0">
+                    <input type="checkbox" value="${escapeHtml(val)}" data-title="${escapeHtml(val)}" checked onchange="updateSelectedGroupCount()" class="channel-checkbox rounded text-neonpurple shrink-0">
+                    <span class="text-cyan-300 truncate">${escapeHtml(val)}</span>
+                </span>
+                <span class="text-[11px] text-gray-500">Thủ công</span>
+            `;
+            container.prepend(label);
+            input.value = '';
+            updateSelectedGroupCount();
+        }
+
+        function onCampScheduleModeChange(mode) {
+            const box = document.getElementById('camp-interval-box');
+            if (box) box.classList.toggle('hidden', mode !== 'interval');
+        }
+
+        function onIntervalPresetChange(val) {
+            const wrap = document.getElementById('camp-custom-interval-wrap');
+            const numInput = document.getElementById('camp-interval-minutes');
+            if (val === 'custom') {
+                if (wrap) wrap.classList.remove('hidden');
+            } else {
+                if (wrap) wrap.classList.add('hidden');
+                if (numInput) numInput.value = val;
             }
         }
 
@@ -1702,7 +1896,7 @@
             const time = document.getElementById('camp-time').value || '09:00';
             const mediaInput = document.getElementById('camp-media');
 
-            if (!name || !content) return showToast('Vui lòng điền tên chiến dịch và nội dung!', 'error');
+            if (!name || !content) return showToast('Vui lòng điền tên lịch đăng và nội dung tin nhắn!', 'error');
 
             const selectedChannels = [];
             document.querySelectorAll('.channel-checkbox:checked').forEach(cb => {
@@ -1710,8 +1904,14 @@
             });
 
             if (selectedChannels.length === 0 && status !== 'DRAFT') {
-                return showToast('Vui lòng chọn ít nhất 1 kênh đăng bài!', 'error');
+                return showToast('Vui lòng chọn ít nhất 1 nhóm để gửi tin!', 'error');
             }
+
+            const scheduleMode = document.getElementById('camp-schedule-mode')?.value || 'once';
+            const presetVal = document.getElementById('camp-interval-preset')?.value || '60';
+            const intervalMinutes = scheduleMode === 'interval'
+                ? (presetVal === 'custom' ? (parseInt(document.getElementById('camp-interval-minutes')?.value, 10) || 60) : parseInt(presetVal, 10))
+                : 0;
 
             const formData = new FormData();
             formData.append('name', name);
@@ -1720,6 +1920,8 @@
             formData.append('target_channels', JSON.stringify(selectedChannels));
             formData.append('start_date', date);
             formData.append('start_time', time);
+            formData.append('schedule_mode', scheduleMode);
+            formData.append('interval_minutes', String(intervalMinutes));
             formData.append('status', status);
 
             if (mediaInput.files[0]) {
@@ -1727,17 +1929,202 @@
             }
 
             try {
-                const res = await fetch('/api/ads/campaigns', {
+                const isEdit = Boolean(window._editingCampaignId);
+                const endpoint = isEdit ? `/api/ads/campaigns/${window._editingCampaignId}/update` : '/api/ads/campaigns';
+                const res = await fetch(endpoint, {
                     method: 'POST',
                     body: formData
                 });
                 const result = await res.json();
                 if (result.error) return showToast(result.error, 'error');
 
-                showToast(`Chiến dịch đã được lưu (${status === 'DRAFT' ? 'Bản nháp' : 'Đã lên lịch'})!`, 'success');
-                switchTab('channel-promo');
+                showToast(
+                    isEdit
+                        ? `Đã cập nhật dự án "${name}"!`
+                        : `Đã lưu "${name}" (${status === 'DRAFT' ? 'Bản nháp' : 'Đã lên lịch'})!`,
+                    'success'
+                );
+                if (!isEdit && result.campaign_id) {
+                    window._editingCampaignId = result.campaign_id;
+                }
+                await loadRightProjectsList();
+                if (window._editingCampaignId && window._campaignsCache[window._editingCampaignId]) {
+                    const banner = document.getElementById('camp-edit-banner');
+                    const titleEl = document.getElementById('camp-edit-title');
+                    const btnSubmit = document.getElementById('btn-submit-schedule');
+                    if (banner) banner.classList.remove('hidden');
+                    if (titleEl) titleEl.innerText = name;
+                    if (btnSubmit) btnSubmit.innerText = 'Lưu thay đổi';
+                }
             } catch (err) {
                 showToast(err.message, 'error');
+            }
+        }
+
+        window._editingCampaignId = null;
+        window._campaignsCache = {};
+
+        function resetCampaignForm() {
+            window._editingCampaignId = null;
+            document.getElementById('camp-name').value = '';
+            document.getElementById('camp-content').value = '';
+            document.getElementById('camp-link').value = '';
+            document.getElementById('camp-media').value = '';
+            document.getElementById('preview-media-box').classList.add('hidden');
+            document.getElementById('camp-schedule-mode').value = 'once';
+            onCampScheduleModeChange('once');
+            toggleAllTargetGroups(false);
+            initCampDateTime();
+            updatePreview();
+            const banner = document.getElementById('camp-edit-banner');
+            const btnSubmit = document.getElementById('btn-submit-schedule');
+            if (banner) banner.classList.add('hidden');
+            if (btnSubmit) btnSubmit.innerText = 'Bắt đầu lên lịch gửi';
+            loadRightProjectsList();
+        }
+
+        function selectProjectForEdit(id) {
+            const c = window._campaignsCache[id];
+            if (!c) return;
+            window._editingCampaignId = c.id;
+
+            document.getElementById('camp-name').value = c.name || '';
+            document.getElementById('camp-content').value = c.content || '';
+            document.getElementById('camp-link').value = c.destination_link || '';
+            updatePreview();
+
+            // Tích chọn lại đúng các nhóm đã lưu
+            let targets = [];
+            try { targets = JSON.parse(c.target_channels || '[]'); } catch(e) {}
+            const targetIds = new Set(targets.map(t => String(typeof t === 'object' ? (t.id || t.username || '') : t)));
+            toggleAllTargetGroups(false);
+            const existingIds = new Set();
+            document.querySelectorAll('.channel-checkbox').forEach(cb => {
+                existingIds.add(String(cb.value));
+                if (targetIds.has(String(cb.value))) cb.checked = true;
+            });
+            // Nếu có nhóm thủ công chưa có trong danh sách hiện tại -> tự thêm vào
+            const container = document.getElementById('camp-channels-container');
+            targets.forEach(t => {
+                const tid = String(typeof t === 'object' ? (t.id || t.username || '') : t);
+                const ttitle = String(typeof t === 'object' ? (t.title || tid) : t);
+                if (tid && !existingIds.has(tid) && container) {
+                    const label = document.createElement('label');
+                    label.className = 'target-group-item flex items-center justify-between gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer';
+                    label.setAttribute('data-search', ttitle.toLowerCase());
+                    label.innerHTML = `
+                        <span class="flex items-center gap-2 min-w-0">
+                            <input type="checkbox" value="${escapeHtml(tid)}" data-title="${escapeHtml(ttitle)}" checked onchange="updateSelectedGroupCount()" class="channel-checkbox rounded text-neonpurple shrink-0">
+                            <span class="text-cyan-300 truncate">${escapeHtml(ttitle)}</span>
+                        </span>
+                        <span class="text-[11px] text-gray-500">Đã lưu</span>
+                    `;
+                    container.prepend(label);
+                }
+            });
+            updateSelectedGroupCount();
+
+            // Thời gian & chu kỳ
+            const mode = c.schedule_mode === 'interval' ? 'interval' : 'once';
+            document.getElementById('camp-schedule-mode').value = mode;
+            onCampScheduleModeChange(mode);
+            if (mode === 'interval') {
+                const mins = String(c.interval_minutes || 60);
+                const preset = document.getElementById('camp-interval-preset');
+                const hasPreset = Array.from(preset.options).some(o => o.value === mins);
+                if (hasPreset) {
+                    preset.value = mins;
+                    onIntervalPresetChange(mins);
+                } else {
+                    preset.value = 'custom';
+                    onIntervalPresetChange('custom');
+                    document.getElementById('camp-interval-minutes').value = mins;
+                }
+            }
+            if (c.start_time && c.start_time.includes(' ')) {
+                const [dPart, tPart] = c.start_time.split(' ');
+                document.getElementById('camp-date').value = dPart;
+                const [hh, mm] = tPart.split(':');
+                document.getElementById('camp-hour').value = hh || '09';
+                document.getElementById('camp-minute').value = mm || '00';
+                updateCampTime();
+            }
+
+            const banner = document.getElementById('camp-edit-banner');
+            const titleEl = document.getElementById('camp-edit-title');
+            const btnSubmit = document.getElementById('btn-submit-schedule');
+            if (banner) banner.classList.remove('hidden');
+            if (titleEl) titleEl.innerText = c.name || '';
+            if (btnSubmit) btnSubmit.innerText = 'Lưu thay đổi';
+
+            loadRightProjectsList();
+            showToast(`Đang chỉnh sửa: ${c.name}`, 'info');
+        }
+
+        async function rightProjectAction(id, action, event) {
+            if (event) event.stopPropagation();
+            if (action === 'delete' && !confirm('Xóa dự án đăng bài này?')) return;
+            try {
+                await fetch(`/api/ads/campaigns/${id}/${action}`, { method: 'POST' });
+                if (action === 'delete' && window._editingCampaignId === id) {
+                    resetCampaignForm();
+                } else {
+                    await loadRightProjectsList();
+                }
+                showToast('Đã cập nhật trạng thái!', 'success');
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        async function loadRightProjectsList() {
+            const box = document.getElementById('camp-right-projects-list');
+            if (!box) return;
+            try {
+                const res = await fetch('/api/ads/campaigns', { cache: 'no-store' });
+                const data = await res.json();
+                const list = data.campaigns || [];
+                window._campaignsCache = {};
+                list.forEach(c => { window._campaignsCache[c.id] = c; });
+
+                if (list.length === 0) {
+                    box.innerHTML = '<div class="text-gray-500 text-center py-4">Chưa có dự án nào.</div>';
+                    return;
+                }
+
+                box.innerHTML = list.map(c => {
+                    let groupCount = 0;
+                    try { groupCount = JSON.parse(c.target_channels || '[]').length; } catch(e) {}
+                    const isSelected = window._editingCampaignId === c.id;
+                    const repeatBadge = (c.schedule_mode === 'interval' && c.interval_minutes > 0)
+                        ? `<span class="px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 text-[10px]">Lặp ${c.interval_minutes}p</span>`
+                        : `<span class="px-1.5 py-0.5 rounded bg-white/5 text-gray-400 text-[10px]">1 lần</span>`;
+                    return `
+                        <div onclick="selectProjectForEdit(${c.id})" class="p-3 rounded-lg border cursor-pointer transition-all ${isSelected ? 'bg-neonpurple/15 border-neonpurple' : 'bg-black/30 border-borderglass hover:border-white/25'}">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="min-w-0">
+                                    <div class="font-semibold text-white truncate">${escapeHtml(c.name)}</div>
+                                    <div class="text-[11px] text-gray-400 mt-0.5 flex flex-wrap items-center gap-1.5">
+                                        <span>${groupCount} nhóm</span>
+                                        <span>·</span>
+                                        ${repeatBadge}
+                                        <span>·</span>
+                                        <span class="font-mono">${c.start_time ? c.start_time.slice(5, 16) : 'Nháp'}</span>
+                                    </div>
+                                </div>
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold shrink-0 ${getStatusBadge(c.status)}">${translateStatus(c.status)}</span>
+                            </div>
+                            <div class="flex items-center justify-end gap-1.5 mt-2 pt-2 border-t border-white/5">
+                                <button type="button" onclick="rightProjectAction(${c.id}, 'start', event)" class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 text-[11px]">Gửi ngay</button>
+                                ${c.status === 'SCHEDULED' ? `<button type="button" onclick="rightProjectAction(${c.id}, 'pause', event)" class="px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 text-[11px]">Tạm dừng</button>` : ''}
+                                ${c.status === 'PAUSED' ? `<button type="button" onclick="rightProjectAction(${c.id}, 'resume', event)" class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 text-[11px]">Tiếp tục</button>` : ''}
+                                <button type="button" onclick="rightProjectAction(${c.id}, 'delete', event)" class="px-2 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 text-[11px]">Xóa</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error(e);
             }
         }
 
@@ -1753,10 +2140,19 @@
                     return;
                 }
 
-                tbody.innerHTML = data.campaigns.map(c => `
+                tbody.innerHTML = data.campaigns.map(c => {
+                    let groupCount = 0;
+                    try { groupCount = JSON.parse(c.target_channels || '[]').length; } catch(e) {}
+                    const repeatBadge = (c.schedule_mode === 'interval' && c.interval_minutes > 0)
+                        ? `<span class="ml-1.5 px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 text-[10px]">Lặp ${c.interval_minutes}p</span>`
+                        : '';
+                    return `
                     <tr class="hover:bg-white/5 transition-colors">
-                        <td class="py-3 px-3 font-medium text-white">${escapeHtml(c.name)}</td>
-                        <td class="py-3 px-3 text-gray-400 font-mono text-xs">${c.start_time || 'Chưa đặt lịch'}</td>
+                        <td class="py-3 px-3 font-medium text-white">
+                            ${escapeHtml(c.name)}
+                            <span class="ml-1.5 text-[11px] text-gray-400 font-normal">(${groupCount} nhóm)</span>
+                        </td>
+                        <td class="py-3 px-3 text-gray-400 font-mono text-xs">${c.start_time || 'Chưa đặt lịch'}${repeatBadge}</td>
                         <td class="py-3 px-3">
                             <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${getStatusBadge(c.status)}">
                                 ${translateStatus(c.status)}
@@ -1764,7 +2160,7 @@
                         </td>
                         <td class="py-3 px-3 text-right space-x-1">
                             ${c.status !== 'ACTIVE' && c.status !== 'COMPLETED' ? `
-                                <button onclick="campaignAction(${c.id}, 'start')" class="px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 text-[10px]">Đăng ngay</button>
+                                <button onclick="campaignAction(${c.id}, 'start')" class="px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 text-[10px]">Gửi ngay</button>
                             ` : ''}
                             ${c.status === 'SCHEDULED' ? `
                                 <button onclick="campaignAction(${c.id}, 'pause')" class="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 text-[10px]">Tạm dừng</button>
@@ -1775,7 +2171,8 @@
                             <button onclick="campaignAction(${c.id}, 'delete')" class="px-2 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 text-[10px]">Xóa</button>
                         </td>
                     </tr>
-                `).join('');
+                    `;
+                }).join('');
             } catch (err) {
                 console.error(err);
             }
@@ -1935,9 +2332,11 @@
         if (window.CLOUD_SCRAPER_ONLY || window.innerWidth < 768) {
             const sidebar = document.getElementById('main-sidebar');
             const topbar = document.getElementById('mobile-cloud-header');
+            const deskBar = document.getElementById('desktop-top-bar');
             if (window.CLOUD_SCRAPER_ONLY) {
                 if (sidebar) sidebar.classList.add('hidden', 'md:hidden');
                 if (topbar) topbar.classList.remove('md:hidden');
+                if (deskBar) deskBar.classList.add('hidden');
             }
             switchTab('member-filter');
         }

@@ -14,7 +14,8 @@ if sys.stderr and hasattr(sys.stderr, "reconfigure"):
     except Exception:
         pass
 
-from datetime import datetime
+from datetime import datetime, timedelta
+from telethon import errors
 from core.database import get_connection, log_action
 from core.telegram_client import post_to_channel
 
@@ -39,32 +40,53 @@ async def execute_campaign(campaign_id):
                 target_channels = [campaign["target_channels"]]
 
         if not target_channels:
-            log_action(campaign_id, "PUBLISH", "Không có kênh mục tiêu nào được chỉ định", "WARNING")
+            log_action(campaign_id, "PUBLISH", "Không có nhóm mục tiêu nào được chỉ định", "WARNING")
             conn.execute("UPDATE campaigns SET status = 'FAILED' WHERE id = ?", (campaign_id,))
             conn.commit()
             return
 
         media_path = media["file_path"] if media and os.path.exists(media["file_path"]) else None
+        post_content = campaign["content"] or ""
+        dest_link = (campaign["destination_link"] or "").strip()
+        if dest_link and dest_link not in post_content:
+            post_content = f"{post_content}\n\n🔗 {dest_link}"
 
         # Cập nhật trạng thái thành ACTIVE
         conn.execute("UPDATE campaigns SET status = 'ACTIVE' WHERE id = ?", (campaign_id,))
         conn.commit()
-        log_action(campaign_id, "PUBLISH_START", f"Bắt đầu đăng bài chiến dịch '{campaign['name']}' tới {len(target_channels)} kênh", "INFO")
+        log_action(campaign_id, "PUBLISH_START", f"Bắt đầu gửi bài '{campaign['name']}' tới {len(target_channels)} nhóm", "INFO")
 
         has_failure = False
-        for channel in target_channels:
+        for idx, channel in enumerate(target_channels):
+            # Kiểm tra nếu người dùng đã tạm dừng hoặc dừng giữa chừng
+            cur = conn.execute("SELECT status FROM campaigns WHERE id = ?", (campaign_id,)).fetchone()
+            if cur and cur["status"] in ("PAUSED", "STOPPED"):
+                log_action(campaign_id, "PUBLISH_STOPPED", "Đã dừng gửi bài theo yêu cầu người dùng", "WARNING")
+                return
+
             ch_id = channel.get("id") or channel.get("username") if isinstance(channel, dict) else str(channel)
             ch_title = channel.get("title", ch_id) if isinstance(channel, dict) else ch_id
 
             try:
-                msg_id = await post_to_channel(ch_id, campaign["content"], media_path=media_path)
+                msg_id = await post_to_channel(ch_id, post_content, media_path=media_path)
                 conn.execute("""
                     INSERT INTO campaign_posts (campaign_id, channel_id, channel_title, message_id, posted_at, status)
                     VALUES (?, ?, ?, ?, datetime('now', 'localtime'), 'SUCCESS')
                 """, (campaign_id, ch_id, ch_title, msg_id))
                 conn.commit()
-                log_action(campaign_id, "POST_SUCCESS", f"Đã đăng thành công lên kênh '{ch_title}' (Message ID: {msg_id})", "SUCCESS")
-                await asyncio.sleep(2) # Giãn cách giữa các kênh
+                log_action(campaign_id, "POST_SUCCESS", f"Đã gửi thành công vào nhóm '{ch_title}' (ID tin: {msg_id})", "SUCCESS")
+                if idx < len(target_channels) - 1:
+                    await asyncio.sleep(3) # Giãn cách an toàn giữa các nhóm
+            except errors.FloodWaitError as fw:
+                has_failure = True
+                err_msg = f"Telegram yêu cầu chờ {fw.seconds}s"
+                conn.execute("""
+                    INSERT INTO campaign_posts (campaign_id, channel_id, channel_title, status, error_message)
+                    VALUES (?, ?, ?, 'FAILED', ?)
+                """, (campaign_id, ch_id, ch_title, err_msg))
+                conn.commit()
+                log_action(campaign_id, "POST_ERROR", f"FloodWait tại nhóm '{ch_title}': {err_msg}", "ERROR")
+                await asyncio.sleep(min(fw.seconds + 1, 15))
             except Exception as e:
                 has_failure = True
                 err_msg = str(e)
@@ -73,14 +95,24 @@ async def execute_campaign(campaign_id):
                     VALUES (?, ?, ?, 'FAILED', ?)
                 """, (campaign_id, ch_id, ch_title, err_msg))
                 conn.commit()
-                log_action(campaign_id, "POST_ERROR", f"Lỗi đăng lên kênh '{ch_title}': {err_msg}", "ERROR")
+                log_action(campaign_id, "POST_ERROR", f"Lỗi gửi vào nhóm '{ch_title}': {err_msg}", "ERROR")
 
-        # Cập nhật kết quả chiến dịch
-        new_status = "COMPLETED" if not has_failure else "FAILED"
-        conn.execute("UPDATE campaigns SET status = ?, updated_at = datetime('now', 'localtime') WHERE id = ?", (new_status, campaign_id))
-        conn.execute("UPDATE campaign_schedule SET is_posted = 1 WHERE campaign_id = ?", (campaign_id,))
-        conn.commit()
-        log_action(campaign_id, "PUBLISH_FINISH", f"Chiến dịch hoàn thành với trạng thái: {new_status}", "SUCCESS" if not has_failure else "WARNING")
+        # Kiểm tra xem có phải lịch lặp lại định kỳ không
+        sched_mode = (schedule["schedule_mode"] if schedule and "schedule_mode" in schedule.keys() else "once") or "once"
+        interval_mins = int(schedule["interval_minutes"] or 0) if schedule and "interval_minutes" in schedule.keys() else 0
+
+        if sched_mode == "interval" and interval_mins > 0:
+            next_run = (datetime.now() + timedelta(minutes=interval_mins)).strftime("%Y-%m-%d %H:%M:%S")
+            conn.execute("UPDATE campaigns SET status = 'SCHEDULED', updated_at = datetime('now', 'localtime') WHERE id = ?", (campaign_id,))
+            conn.execute("UPDATE campaign_schedule SET start_time = ?, is_posted = 0, last_attempt = datetime('now', 'localtime') WHERE campaign_id = ?", (next_run, campaign_id))
+            conn.commit()
+            log_action(campaign_id, "PUBLISH_NEXT", f"Hoàn tất lượt gửi. Hẹn lượt tiếp theo lúc {next_run} (lặp mỗi {interval_mins} phút)", "SUCCESS" if not has_failure else "WARNING")
+        else:
+            new_status = "COMPLETED" if not has_failure else "FAILED"
+            conn.execute("UPDATE campaigns SET status = ?, updated_at = datetime('now', 'localtime') WHERE id = ?", (new_status, campaign_id))
+            conn.execute("UPDATE campaign_schedule SET is_posted = 1, last_attempt = datetime('now', 'localtime') WHERE campaign_id = ?", (campaign_id,))
+            conn.commit()
+            log_action(campaign_id, "PUBLISH_FINISH", f"Hoàn tất gửi bài với trạng thái: {new_status}", "SUCCESS" if not has_failure else "WARNING")
 
     except Exception as ex:
         log_action(campaign_id, "SYSTEM_ERROR", f"Lỗi hệ thống khi chạy chiến dịch: {str(ex)}", "ERROR")

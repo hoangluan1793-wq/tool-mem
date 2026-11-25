@@ -46,7 +46,7 @@ from core.database import (
 from core.telegram_client import (
     get_telegram_client, check_auth, get_admin_channels, get_my_groups, scrape_group_members, post_to_channel,
     get_accounts_list, switch_account, start_login_request, complete_login_request, delete_saved_account,
-    request_scrape_stop
+    request_scrape_stop, export_all_sessions, restore_all_sessions
 )
 from modules.ads_manager.scheduler import (
     start_scheduler, stop_scheduler, set_campaign_status, delete_campaign, execute_campaign
@@ -392,6 +392,14 @@ async def handle_accounts_delete(request):
     res = await delete_saved_account(session_name)
     return web.json_response(res)
 
+async def handle_accounts_export_sessions(request):
+    return web.json_response(export_all_sessions())
+
+async def handle_accounts_restore_sessions(request):
+    body = await request.json()
+    res = await restore_all_sessions(body)
+    return web.json_response(res)
+
 async def handle_channels(request):
     channels = await get_admin_channels()
     return web.json_response({"channels": channels})
@@ -546,7 +554,8 @@ async def handle_ads_campaigns_list(request):
     conn = get_connection()
     try:
         rows = conn.execute("""
-            SELECT c.*, s.start_time, s.end_time, s.is_posted, m.file_name as media_name, m.media_type
+            SELECT c.*, s.start_time, s.end_time, s.is_posted, s.schedule_mode, s.interval_minutes,
+                   m.file_name as media_name, m.media_type
             FROM campaigns c
             LEFT JOIN campaign_schedule s ON c.id = s.campaign_id
             LEFT JOIN campaign_media m ON c.id = m.campaign_id
@@ -556,69 +565,70 @@ async def handle_ads_campaigns_list(request):
     finally:
         conn.close()
 
-async def handle_ads_campaign_create(request):
+async def _parse_campaign_multipart(request):
+    """Đọc dữ liệu multipart form cho tạo mới hoặc cập nhật lịch đăng bài."""
     reader = await request.multipart()
-    name = ""
-    description = ""
-    content = ""
-    destination_link = ""
-    target_channels = "[]"
-    start_date = ""
-    start_time = ""
-    status = "DRAFT"
-    budget = 0.0
-    media_file_path = None
-    media_file_name = None
-    media_type = None
-
+    fields = {
+        "name": "",
+        "description": "",
+        "content": "",
+        "destination_link": "",
+        "target_channels": "[]",
+        "start_date": "",
+        "start_time": "",
+        "schedule_mode": "once",
+        "interval_minutes": 0,
+        "status": "DRAFT",
+        "budget": 0.0,
+        "media_file_path": None,
+        "media_file_name": None,
+        "media_type": None,
+    }
     while True:
         part = await reader.next()
         if part is None:
             break
-        if part.name == "name":
-            name = (await part.text()).strip()
-        elif part.name == "description":
-            description = (await part.text()).strip()
-        elif part.name == "content":
-            content = (await part.text()).strip()
-        elif part.name == "destination_link":
-            destination_link = (await part.text()).strip()
+        if part.name in ("name", "description", "content", "destination_link", "start_date", "start_time", "status"):
+            fields[part.name] = (await part.text()).strip()
         elif part.name == "target_channels":
-            target_channels = await part.text()
-        elif part.name == "start_date":
-            start_date = (await part.text()).strip()
-        elif part.name == "start_time":
-            start_time = (await part.text()).strip()
-        elif part.name == "status":
-            status = (await part.text()).strip()
+            fields["target_channels"] = await part.text()
+        elif part.name == "schedule_mode":
+            fields["schedule_mode"] = (await part.text()).strip() or "once"
+        elif part.name == "interval_minutes":
+            try:
+                fields["interval_minutes"] = max(0, int(await part.text()))
+            except ValueError:
+                fields["interval_minutes"] = 0
         elif part.name == "budget":
             try:
-                budget = float(await part.text())
+                fields["budget"] = float(await part.text())
             except ValueError:
-                budget = 0.0
-        elif part.name == "media":
+                fields["budget"] = 0.0
+        elif part.name == "media" and part.filename:
             filename = part.filename
-            if filename:
-                media_file_name = filename
-                ext = filename.split(".")[-1].lower()
-                media_type = "video" if ext in ["mp4", "mov", "avi", "mkv"] else "image"
-                save_path = os.path.join(UPLOADS_DIR, f"{int(datetime.now().timestamp())}_{filename}")
-                with open(save_path, "wb") as f:
-                    while True:
-                        chunk = await part.read_chunk()
-                        if not chunk:
-                            break
-                        f.write(chunk)
-                media_file_path = save_path
+            ext = filename.split(".")[-1].lower()
+            fields["media_file_name"] = filename
+            fields["media_type"] = "video" if ext in ["mp4", "mov", "avi", "mkv"] else "image"
+            save_path = os.path.join(UPLOADS_DIR, f"{int(datetime.now().timestamp())}_{filename}")
+            with open(save_path, "wb") as f:
+                while True:
+                    chunk = await part.read_chunk()
+                    if not chunk:
+                        break
+                    f.write(chunk)
+            fields["media_file_path"] = save_path
+    return fields
 
-    if not name or not content:
-        return web.json_response({"error": "Vui lòng nhập tên chiến dịch và nội dung bài viết!"}, status=400)
 
-    # Ghép start datetime
+async def handle_ads_campaign_create(request):
+    f = await _parse_campaign_multipart(request)
+    if not f["name"] or not f["content"]:
+        return web.json_response({"error": "Vui lòng nhập tên lịch đăng và nội dung tin nhắn!"}, status=400)
+
     scheduled_datetime = None
-    if start_date and start_time:
-        scheduled_datetime = f"{start_date} {start_time}:00"
-    elif status == "SCHEDULED":
+    if f["start_date"] and f["start_time"]:
+        scheduled_datetime = f"{f['start_date']} {f['start_time']}:00"
+    elif f["status"] == "SCHEDULED":
         scheduled_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     conn = get_connection()
@@ -627,24 +637,76 @@ async def handle_ads_campaign_create(request):
         cursor.execute("""
             INSERT INTO campaigns (name, description, content, destination_link, target_channels, status, budget)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (name, description, content, destination_link, target_channels, status, budget))
+        """, (f["name"], f["description"], f["content"], f["destination_link"], f["target_channels"], f["status"], f["budget"]))
         campaign_id = cursor.lastrowid
 
-        if media_file_path:
+        if f["media_file_path"]:
             cursor.execute("""
                 INSERT INTO campaign_media (campaign_id, media_type, file_path, file_name)
                 VALUES (?, ?, ?, ?)
-            """, (campaign_id, media_type, media_file_path, media_file_name))
+            """, (campaign_id, f["media_type"], f["media_file_path"], f["media_file_name"]))
 
         if scheduled_datetime:
             cursor.execute("""
-                INSERT INTO campaign_schedule (campaign_id, start_time)
-                VALUES (?, ?)
-            """, (campaign_id, scheduled_datetime))
+                INSERT INTO campaign_schedule (campaign_id, start_time, schedule_mode, interval_minutes)
+                VALUES (?, ?, ?, ?)
+            """, (campaign_id, scheduled_datetime, f["schedule_mode"], f["interval_minutes"]))
 
         conn.commit()
-        log_action(campaign_id, "CREATE", f"Tạo chiến dịch '{name}' trạng thái {status}", "SUCCESS")
+        log_action(campaign_id, "CREATE", f"Tạo lịch đăng '{f['name']}' trạng thái {f['status']}", "SUCCESS")
         return web.json_response({"status": "created", "campaign_id": campaign_id})
+    finally:
+        conn.close()
+
+
+async def handle_ads_campaign_update(request):
+    campaign_id = int(request.match_info["id"])
+    f = await _parse_campaign_multipart(request)
+    if not f["name"] or not f["content"]:
+        return web.json_response({"error": "Vui lòng nhập tên lịch đăng và nội dung tin nhắn!"}, status=400)
+
+    scheduled_datetime = None
+    if f["start_date"] and f["start_time"]:
+        scheduled_datetime = f"{f['start_date']} {f['start_time']}:00"
+    elif f["status"] == "SCHEDULED":
+        scheduled_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    conn = get_connection()
+    try:
+        existing = conn.execute("SELECT id FROM campaigns WHERE id = ?", (campaign_id,)).fetchone()
+        if not existing:
+            return web.json_response({"error": "Không tìm thấy lịch đăng bài!"}, status=404)
+
+        conn.execute("""
+            UPDATE campaigns
+            SET name = ?, description = ?, content = ?, destination_link = ?, target_channels = ?, status = ?, updated_at = datetime('now', 'localtime')
+            WHERE id = ?
+        """, (f["name"], f["description"], f["content"], f["destination_link"], f["target_channels"], f["status"], campaign_id))
+
+        if f["media_file_path"]:
+            conn.execute("DELETE FROM campaign_media WHERE campaign_id = ?", (campaign_id,))
+            conn.execute("""
+                INSERT INTO campaign_media (campaign_id, media_type, file_path, file_name)
+                VALUES (?, ?, ?, ?)
+            """, (campaign_id, f["media_type"], f["media_file_path"], f["media_file_name"]))
+
+        if scheduled_datetime:
+            sched_row = conn.execute("SELECT id FROM campaign_schedule WHERE campaign_id = ?", (campaign_id,)).fetchone()
+            if sched_row:
+                conn.execute("""
+                    UPDATE campaign_schedule
+                    SET start_time = ?, schedule_mode = ?, interval_minutes = ?, is_posted = 0
+                    WHERE campaign_id = ?
+                """, (scheduled_datetime, f["schedule_mode"], f["interval_minutes"], campaign_id))
+            else:
+                conn.execute("""
+                    INSERT INTO campaign_schedule (campaign_id, start_time, schedule_mode, interval_minutes)
+                    VALUES (?, ?, ?, ?)
+                """, (campaign_id, scheduled_datetime, f["schedule_mode"], f["interval_minutes"]))
+
+        conn.commit()
+        log_action(campaign_id, "UPDATE", f"Cập nhật lịch đăng '{f['name']}' ({f['status']})", "INFO")
+        return web.json_response({"status": "updated", "campaign_id": campaign_id})
     finally:
         conn.close()
 
@@ -823,6 +885,8 @@ def create_app():
     app.router.add_post("/api/accounts/send_code", handle_accounts_send_code)
     app.router.add_post("/api/accounts/verify_code", handle_accounts_verify_code)
     app.router.add_post("/api/accounts/delete", handle_accounts_delete)
+    app.router.add_get("/api/accounts/export_sessions", handle_accounts_export_sessions)
+    app.router.add_post("/api/accounts/restore_sessions", handle_accounts_restore_sessions)
 
     # Member Filter
     app.router.add_post("/api/scrape/start", handle_scrape_start)
@@ -837,6 +901,7 @@ def create_app():
     app.router.add_get("/api/ads/dashboard", handle_ads_dashboard)
     app.router.add_get("/api/ads/campaigns", handle_ads_campaigns_list)
     app.router.add_post("/api/ads/campaigns", handle_ads_campaign_create)
+    app.router.add_post("/api/ads/campaigns/{id}/update", handle_ads_campaign_update)
     app.router.add_post("/api/ads/campaigns/{id}/{action}", handle_ads_campaign_action)
     app.router.add_get("/api/ads/history", handle_ads_history)
     app.router.add_get("/api/ads/calendar", handle_ads_calendar)

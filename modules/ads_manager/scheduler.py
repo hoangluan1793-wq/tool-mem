@@ -66,15 +66,18 @@ async def execute_campaign(campaign_id):
 
             ch_id = channel.get("id") or channel.get("username") if isinstance(channel, dict) else str(channel)
             ch_title = channel.get("title", ch_id) if isinstance(channel, dict) else ch_id
+            topic_id = channel.get("topic_id") if isinstance(channel, dict) else None
+            topic_title = channel.get("topic_title") if isinstance(channel, dict) else None
+            display_title = f"{ch_title} › {topic_title}" if topic_title else ch_title
 
             try:
-                msg_id = await post_to_channel(ch_id, post_content, media_path=media_path)
+                msg_id = await post_to_channel(ch_id, post_content, media_path=media_path, topic_id=topic_id)
                 conn.execute("""
                     INSERT INTO campaign_posts (campaign_id, channel_id, channel_title, message_id, posted_at, status)
                     VALUES (?, ?, ?, ?, datetime('now', 'localtime'), 'SUCCESS')
-                """, (campaign_id, ch_id, ch_title, msg_id))
+                """, (campaign_id, ch_id, display_title, msg_id))
                 conn.commit()
-                log_action(campaign_id, "POST_SUCCESS", f"Đã gửi thành công vào nhóm '{ch_title}' (ID tin: {msg_id})", "SUCCESS")
+                log_action(campaign_id, "POST_SUCCESS", f"Đã gửi thành công vào '{display_title}' (ID tin: {msg_id})", "SUCCESS")
                 if idx < len(target_channels) - 1:
                     await asyncio.sleep(3) # Giãn cách an toàn giữa các nhóm
             except errors.FloodWaitError as fw:
@@ -83,9 +86,9 @@ async def execute_campaign(campaign_id):
                 conn.execute("""
                     INSERT INTO campaign_posts (campaign_id, channel_id, channel_title, status, error_message)
                     VALUES (?, ?, ?, 'FAILED', ?)
-                """, (campaign_id, ch_id, ch_title, err_msg))
+                """, (campaign_id, ch_id, display_title, err_msg))
                 conn.commit()
-                log_action(campaign_id, "POST_ERROR", f"FloodWait tại nhóm '{ch_title}': {err_msg}", "ERROR")
+                log_action(campaign_id, "POST_ERROR", f"FloodWait tại '{display_title}': {err_msg}", "ERROR")
                 await asyncio.sleep(min(fw.seconds + 1, 15))
             except Exception as e:
                 has_failure = True
@@ -93,9 +96,9 @@ async def execute_campaign(campaign_id):
                 conn.execute("""
                     INSERT INTO campaign_posts (campaign_id, channel_id, channel_title, status, error_message)
                     VALUES (?, ?, ?, 'FAILED', ?)
-                """, (campaign_id, ch_id, ch_title, err_msg))
+                """, (campaign_id, ch_id, display_title, err_msg))
                 conn.commit()
-                log_action(campaign_id, "POST_ERROR", f"Lỗi gửi vào nhóm '{ch_title}': {err_msg}", "ERROR")
+                log_action(campaign_id, "POST_ERROR", f"Lỗi gửi vào '{display_title}': {err_msg}", "ERROR")
 
         # Kiểm tra xem có phải lịch lặp lại định kỳ không
         sched_mode = (schedule["schedule_mode"] if schedule and "schedule_mode" in schedule.keys() else "once") or "once"

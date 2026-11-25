@@ -13,7 +13,7 @@ from telethon.tl.types import (
     UserStatusRecently, UserStatusLastWeek, UserStatusLastMonth,
     ChatAdminRights
 )
-from telethon.tl.functions.messages import ImportChatInviteRequest
+from telethon.tl.functions.messages import ImportChatInviteRequest, GetForumTopicsRequest
 
 if getattr(sys, 'frozen', False):
     BASE_DIR = os.path.dirname(sys.executable)
@@ -426,9 +426,50 @@ async def get_my_groups():
                 "id": str(dialog.id),
                 "title": dialog.title,
                 "username": getattr(entity, 'username', '') or '',
-                "participants_count": count
+                "participants_count": count,
+                "is_forum": bool(getattr(entity, 'forum', False))
             })
     return groups
+
+
+async def get_group_topics(group_identifier):
+    """Lấy danh sách các mục chat con (Forum Topics) của một nhóm Telegram."""
+    client = get_telegram_client()
+    if not client:
+        return []
+    if not client.is_connected():
+        await client.connect()
+    if not await client.is_user_authorized():
+        return []
+
+    try:
+        try:
+            target_id = int(group_identifier)
+        except ValueError:
+            target_id = str(group_identifier).strip()
+        entity = await client.get_entity(target_id)
+        if not getattr(entity, 'forum', False):
+            return []
+        res = await client(GetForumTopicsRequest(
+            peer=entity,
+            offset_date=None,
+            offset_id=0,
+            offset_topic=0,
+            limit=100
+        ))
+        topics = []
+        for t in getattr(res, 'topics', []) or []:
+            tid = getattr(t, 'id', None)
+            title = getattr(t, 'title', None)
+            if tid and title:
+                topics.append({
+                    "id": tid,
+                    "title": title,
+                    "closed": bool(getattr(t, 'closed', False))
+                })
+        return topics
+    except Exception:
+        return []
 
 # --- LẤY DANH SÁCH KÊNH QUẢN LÝ ---
 async def get_admin_channels():
@@ -458,8 +499,8 @@ async def get_admin_channels():
                 })
     return channels
 
-# --- ĐĂNG BÀI LÊN KÊNH ---
-async def post_to_channel(channel_identifier, text, media_path=None):
+# --- ĐĂNG BÀI LÊN KÊNH / NHÓM (HỖ TRỢ CHỦ ĐỀ FORUM TOPIC) ---
+async def post_to_channel(channel_identifier, text, media_path=None, topic_id=None):
     client = get_telegram_client()
     if not client:
         raise Exception("Telegram client chưa được xác thực")
@@ -476,13 +517,16 @@ async def post_to_channel(channel_identifier, text, media_path=None):
 
         entity = await client.get_entity(target_id)
     except Exception as e:
-        raise Exception(f"Không thể tìm thấy kênh '{channel_identifier}': {str(e)}")
+        raise Exception(f"Không thể tìm thấy nhóm/kênh '{channel_identifier}': {str(e)}")
+
+    reply_to_id = int(topic_id) if topic_id else None
 
     if media_path and os.path.exists(media_path):
         msg = await client.send_file(
             entity,
             media_path,
             caption=text,
+            reply_to=reply_to_id,
             parse_mode='html',
             link_preview=False
         )
@@ -490,6 +534,7 @@ async def post_to_channel(channel_identifier, text, media_path=None):
         msg = await client.send_message(
             entity,
             text,
+            reply_to=reply_to_id,
             parse_mode='html',
             link_preview=False
         )

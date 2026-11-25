@@ -1709,6 +1709,8 @@
         }
 
         // --- ĐĂNG BÀI TỰ ĐỘNG VÀO NHÓM ---
+        window._groupTopicsCache = {};
+
         async function loadAdminChannels() {
             try {
                 const res = await fetch('/api/my_groups');
@@ -1719,19 +1721,72 @@
                     updateSelectedGroupCount();
                     return;
                 }
-                container.innerHTML = data.groups.map(g => `
-                    <label class="target-group-item flex items-center justify-between gap-2 p-1.5 rounded hover:bg-white/5 cursor-pointer" data-search="${escapeHtml((g.title + ' ' + (g.username || '') + ' ' + g.id).toLowerCase())}">
-                        <span class="flex items-center gap-2 min-w-0">
-                            <input type="checkbox" value="${g.id}" data-title="${escapeHtml(g.title)}" onchange="updateSelectedGroupCount()" class="channel-checkbox rounded text-neonpurple shrink-0">
-                            <span class="text-white truncate">${escapeHtml(g.title)}</span>
-                            ${g.username ? `<span class="text-gray-500 shrink-0">@${escapeHtml(g.username)}</span>` : ''}
-                        </span>
-                        <span class="text-[11px] text-gray-500 font-mono shrink-0">${g.participants_count ? g.participants_count + ' tv' : ''}</span>
-                    </label>
-                `).join('');
+                container.innerHTML = data.groups.map(g => {
+                    const forumBadge = g.is_forum
+                        ? `<span class="px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 text-[10px] shrink-0">Có chủ đề</span>`
+                        : '';
+                    return `
+                    <div class="target-group-item rounded hover:bg-white/[0.04] p-1.5 transition-colors" data-search="${escapeHtml((g.title + ' ' + (g.username || '') + ' ' + g.id).toLowerCase())}">
+                        <label class="flex items-center justify-between gap-2 cursor-pointer">
+                            <span class="flex items-center gap-2 min-w-0">
+                                <input type="checkbox" value="${g.id}" data-title="${escapeHtml(g.title)}" data-is-forum="${g.is_forum ? '1' : '0'}" onchange="onTargetGroupToggle(this)" class="channel-checkbox rounded text-neonpurple shrink-0">
+                                <span class="text-white truncate">${escapeHtml(g.title)}</span>
+                                ${forumBadge}
+                                ${g.username ? `<span class="text-gray-500 shrink-0">@${escapeHtml(g.username)}</span>` : ''}
+                            </span>
+                            <span class="text-[11px] text-gray-500 font-mono shrink-0">${g.participants_count ? g.participants_count + ' tv' : ''}</span>
+                        </label>
+                        <div id="topic-box-${escapeHtml(g.id)}" class="hidden mt-1.5 pl-6">
+                            <select id="topic-select-${escapeHtml(g.id)}" class="w-full bg-black/60 border border-cyan-500/40 rounded-lg px-2.5 py-1 text-xs text-cyan-200 focus:outline-none focus:border-cyan-400">
+                                <option value="">-- Đang tải mục chat (Topic)... --</option>
+                            </select>
+                        </div>
+                    </div>`;
+                }).join('');
                 updateSelectedGroupCount();
             } catch (err) {
                 console.error(err);
+            }
+        }
+
+        async function onTargetGroupToggle(cb, preselectTopicId = null) {
+            updateSelectedGroupCount();
+            const gid = cb.value;
+            const isForum = cb.getAttribute('data-is-forum') === '1';
+            const box = document.getElementById(`topic-box-${gid}`);
+            const sel = document.getElementById(`topic-select-${gid}`);
+            if (!box || !sel) return;
+
+            if (!cb.checked) {
+                box.classList.add('hidden');
+                return;
+            }
+            if (!isForum && !preselectTopicId) return;
+
+            box.classList.remove('hidden');
+            let topics = window._groupTopicsCache[gid];
+            if (!topics) {
+                sel.innerHTML = '<option value="">-- Đang tải mục chat (Topic)... --</option>';
+                try {
+                    const res = await fetch(`/api/group_topics?group_id=${encodeURIComponent(gid)}`);
+                    const data = await res.json();
+                    topics = data.topics || [];
+                    window._groupTopicsCache[gid] = topics;
+                } catch (e) {
+                    topics = [];
+                }
+            }
+            if (!topics || topics.length === 0) {
+                box.classList.add('hidden');
+                return;
+            }
+            sel.innerHTML = '<option value="">-- Chọn mục chat muốn gửi vào --</option>' +
+                topics.map(t => {
+                    const lockTxt = t.closed ? ' (Đã khóa)' : '';
+                    return `<option value="${t.id}" data-topic-title="${escapeHtml(t.title)}">${escapeHtml(t.title)}${lockTxt}</option>`;
+                }).join('');
+            if (preselectTopicId) {
+                sel.value = String(preselectTopicId);
             }
         }
 
@@ -1746,6 +1801,8 @@
         function toggleAllTargetGroups(checked) {
             document.querySelectorAll('.target-group-item:not(.hidden) .channel-checkbox').forEach(cb => {
                 cb.checked = checked;
+                const box = document.getElementById(`topic-box-${cb.value}`);
+                if (!checked && box) box.classList.add('hidden');
             });
             updateSelectedGroupCount();
         }
@@ -1899,9 +1956,29 @@
             if (!name || !content) return showToast('Vui lòng điền tên lịch đăng và nội dung tin nhắn!', 'error');
 
             const selectedChannels = [];
+            let missingTopicGroup = null;
             document.querySelectorAll('.channel-checkbox:checked').forEach(cb => {
-                selectedChannels.push({ id: cb.value, title: cb.getAttribute('data-title') });
+                const title = cb.getAttribute('data-title');
+                const isForum = cb.getAttribute('data-is-forum') === '1';
+                const topicSel = document.getElementById(`topic-select-${cb.value}`);
+                const topicId = (topicSel && topicSel.value) ? parseInt(topicSel.value, 10) : null;
+                const topicTitle = (topicSel && topicSel.value && topicSel.selectedIndex >= 0)
+                    ? topicSel.options[topicSel.selectedIndex].getAttribute('data-topic-title')
+                    : null;
+                if (isForum && topicSel && topicSel.options.length > 1 && !topicId && !missingTopicGroup) {
+                    missingTopicGroup = title;
+                }
+                selectedChannels.push({
+                    id: cb.value,
+                    title: title,
+                    topic_id: topicId,
+                    topic_title: topicTitle
+                });
             });
+
+            if (missingTopicGroup && status !== 'DRAFT') {
+                return showToast(`Nhóm "${missingTopicGroup}" có nhiều mục chat, vui lòng chọn mục chat muốn gửi!`, 'error');
+            }
 
             if (selectedChannels.length === 0 && status !== 'DRAFT') {
                 return showToast('Vui lòng chọn ít nhất 1 nhóm để gửi tin!', 'error');
@@ -1993,15 +2070,23 @@
             document.getElementById('camp-link').value = c.destination_link || '';
             updatePreview();
 
-            // Tích chọn lại đúng các nhóm đã lưu
+            // Tích chọn lại đúng các nhóm & mục chat (topic) đã lưu
             let targets = [];
             try { targets = JSON.parse(c.target_channels || '[]'); } catch(e) {}
-            const targetIds = new Set(targets.map(t => String(typeof t === 'object' ? (t.id || t.username || '') : t)));
+            const targetMap = {};
+            targets.forEach(t => {
+                const tid = String(typeof t === 'object' ? (t.id || t.username || '') : t);
+                if (tid) targetMap[tid] = typeof t === 'object' ? t : { id: tid, title: tid };
+            });
             toggleAllTargetGroups(false);
             const existingIds = new Set();
             document.querySelectorAll('.channel-checkbox').forEach(cb => {
-                existingIds.add(String(cb.value));
-                if (targetIds.has(String(cb.value))) cb.checked = true;
+                const cid = String(cb.value);
+                existingIds.add(cid);
+                if (targetMap[cid]) {
+                    cb.checked = true;
+                    onTargetGroupToggle(cb, targetMap[cid].topic_id || null);
+                }
             });
             // Nếu có nhóm thủ công chưa có trong danh sách hiện tại -> tự thêm vào
             const container = document.getElementById('camp-channels-container');

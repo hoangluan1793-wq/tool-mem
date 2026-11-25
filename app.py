@@ -44,7 +44,7 @@ from core.database import (
     get_scraped_history_count, clear_scraped_history
 )
 from core.telegram_client import (
-    get_telegram_client, check_auth, get_admin_channels, get_my_groups, scrape_group_members, post_to_channel,
+    get_telegram_client, check_auth, get_admin_channels, get_my_groups, get_group_topics, scrape_group_members, post_to_channel,
     get_accounts_list, switch_account, start_login_request, complete_login_request, delete_saved_account,
     request_scrape_stop, export_all_sessions, restore_all_sessions
 )
@@ -407,6 +407,13 @@ async def handle_channels(request):
 async def handle_my_groups(request):
     groups = await get_my_groups()
     return web.json_response({"groups": groups})
+
+async def handle_group_topics(request):
+    group_id = request.query.get("group_id", "").strip()
+    if not group_id:
+        return web.json_response({"topics": []})
+    topics = await get_group_topics(group_id)
+    return web.json_response({"topics": topics})
 
 # --- MEMBER SCRAPER HANDLERS ---
 async def handle_scrape_start(request):
@@ -877,6 +884,7 @@ def create_app():
     app.router.add_post("/api/update/apply", handle_update_apply)
     app.router.add_get("/api/channels", handle_channels)
     app.router.add_get("/api/my_groups", handle_my_groups)
+    app.router.add_get("/api/group_topics", handle_group_topics)
     app.router.add_post("/api/exit", handle_exit)
 
     # Multi Accounts

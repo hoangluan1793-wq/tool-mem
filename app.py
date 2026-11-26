@@ -22,6 +22,7 @@ if hasattr(sys.stderr, "reconfigure"):
         pass
 
 import json
+import html
 import asyncio
 import csv
 import subprocess
@@ -531,21 +532,59 @@ async def handle_scrape_send_tg(request):
         return web.json_response({"error": "Danh sách thành viên đang trống!"}, status=400)
 
     client = get_telegram_client()
+    if not client:
+        return web.json_response({"error": "Telegram chưa đăng nhập!"}, status=400)
+    if not client.is_connected():
+        await client.connect()
+    if not await client.is_user_authorized():
+        return web.json_response({"error": "Tài khoản Telegram chưa đăng nhập!"}, status=400)
+
     total = len(members)
-    chunk_size = 50
+    chunk_size = 30
+
+    # Chuẩn hóa đích nhận (me / ID số / @username / link t.me)
+    resolved_target = target_chat
+    if resolved_target != "me":
+        if "t.me/" in resolved_target:
+            resolved_target = resolved_target.split("t.me/")[-1].split("?")[0].strip("/")
+        if resolved_target.isdigit() or (resolved_target.startswith("-") and resolved_target[1:].isdigit()):
+            resolved_target = int(resolved_target)
+        elif not resolved_target.startswith("@") and not resolved_target.startswith("+"):
+            resolved_target = "@" + resolved_target
 
     try:
         try:
-            target_entity = 'me' if target_chat == 'me' else await client.get_entity(target_chat)
+            target_entity = "me" if resolved_target == "me" else await client.get_entity(resolved_target)
         except Exception as e:
-            return web.json_response({"error": f"Không tìm thấy chat đích: {str(e)}"}, status=400)
+            return web.json_response({"error": f"Không tìm thấy người nhận '{target_chat}': {str(e)}"}, status=400)
 
-        for i in range(0, total, chunk_size):
-            chunk = members[i:i + chunk_size]
-            lines = [f'<a href="tg://user?id={u["id"]}">{u["full_name"]}</a>' for u in chunk]
-            msg = "\n".join(lines)
-            await client.send_message(target_entity, msg, parse_mode='html', link_preview=False)
-            await asyncio.sleep(2.5)
+        def build_chunk_msg(chunk):
+            lines = []
+            for u in chunk:
+                safe_name = html.escape(str(u.get("full_name") or "Người dùng"))
+                lines.append(f'<a href="tg://user?id={u["id"]}">{safe_name}</a>')
+            return "\n".join(lines)
+
+        # Gửi lượt đầu tiên ngay để xác nhận quyền gửi & không lỗi
+        first_chunk = members[:chunk_size]
+        await client.send_message(target_entity, build_chunk_msg(first_chunk), parse_mode="html", link_preview=False)
+
+        # Nếu còn nhiều tin, gửi tiếp chạy nền để không bị Render timeout HTTP
+        if total > chunk_size:
+            remaining = list(members[chunk_size:])
+            async def send_remaining():
+                for i in range(0, len(remaining), chunk_size):
+                    try:
+                        await asyncio.sleep(2.5)
+                        await client.send_message(
+                            target_entity,
+                            build_chunk_msg(remaining[i:i + chunk_size]),
+                            parse_mode="html",
+                            link_preview=False
+                        )
+                    except Exception:
+                        await asyncio.sleep(5)
+            asyncio.create_task(send_remaining())
 
         return web.json_response({"status": "success", "total_sent": total})
     except Exception as e:

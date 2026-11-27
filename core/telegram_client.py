@@ -459,12 +459,15 @@ def _get_effective_api_creds():
     return api_id, api_hash
 
 def _make_qr_data_uri(url):
-    import io, base64, qrcode
-    img = qrcode.make(url)
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    b64 = base64.b64encode(buf.getvalue()).decode("ascii")
-    return f"data:image/png;base64,{b64}"
+    try:
+        import io, base64, qrcode
+        img = qrcode.make(url)
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+        return f"data:image/png;base64,{b64}"
+    except Exception:
+        return ""
 
 async def _finalize_qr_user(me):
     global _qr_client, _qr_login, _qr_state

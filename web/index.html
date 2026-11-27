@@ -10,6 +10,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- QRCode.js CDN (fallback khi server không cài qrcode/PIL) -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <!-- Font: Be Vietnam Pro (UI) + JetBrains Mono (số, ID) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -972,8 +974,9 @@
                         </button>
                     </div>
                     <div id="qr-login-box" class="hidden flex flex-col items-center gap-2 pt-2 border-t border-borderglass">
-                        <div class="bg-white p-2 rounded-lg">
+                        <div id="qr-visual-wrap" class="bg-white p-2 rounded-lg">
                             <img id="qr-login-img" src="" alt="QR" class="w-40 h-40 block">
+                            <div id="qr-login-canvas" class="hidden w-40 h-40"></div>
                         </div>
                         <a id="qr-direct-link" href="#" class="w-full text-center py-2 px-3 rounded-lg bg-neonblue/25 hover:bg-neonblue/40 border border-neonblue/40 text-white text-xs font-medium transition">
                             Mở app Telegram trên ĐT để xác nhận (Không cần quét)
@@ -1401,6 +1404,36 @@
             }
         }
 
+        let _lastRenderedQrUrl = '';
+
+        function _renderQrVisual(qrImage, qrUrl) {
+            const wrapEl = document.getElementById('qr-visual-wrap');
+            const imgEl = document.getElementById('qr-login-img');
+            const canvasEl = document.getElementById('qr-login-canvas');
+            const linkEl = document.getElementById('qr-direct-link');
+            if (linkEl && qrUrl) linkEl.href = qrUrl;
+
+            if (qrImage) {
+                if (imgEl.src !== qrImage) imgEl.src = qrImage;
+                imgEl.classList.remove('hidden');
+                canvasEl.classList.add('hidden');
+                wrapEl.classList.remove('hidden');
+                return;
+            }
+            if (qrUrl && typeof QRCode !== 'undefined') {
+                if (_lastRenderedQrUrl !== qrUrl) {
+                    _lastRenderedQrUrl = qrUrl;
+                    canvasEl.innerHTML = '';
+                    new QRCode(canvasEl, { text: qrUrl, width: 160, height: 160 });
+                }
+                imgEl.classList.add('hidden');
+                canvasEl.classList.remove('hidden');
+                wrapEl.classList.remove('hidden');
+                return;
+            }
+            wrapEl.classList.add('hidden');
+        }
+
         async function startQrLogin() {
             stopQrPolling();
             const btn = document.getElementById('btn-qr-start');
@@ -1418,9 +1451,8 @@
                     showToast(data.error, 'error');
                     return;
                 }
-                document.getElementById('qr-login-img').src = data.qr_image;
-                const linkEl = document.getElementById('qr-direct-link');
-                if (linkEl && data.qr_url) linkEl.href = data.qr_url;
+                _lastRenderedQrUrl = '';
+                _renderQrVisual(data.qr_image, data.qr_url);
                 statusEl.innerText = 'Đang chờ quét hoặc bấm mở Telegram trên ĐT...';
                 box.classList.remove('hidden');
                 btn.innerText = 'Đổi mã QR';
@@ -1459,11 +1491,8 @@
                     document.getElementById('qr-2fa-group').classList.remove('hidden');
                     return;
                 }
-                if (data.status === 'waiting' && data.qr_image) {
-                    const imgEl = document.getElementById('qr-login-img');
-                    if (imgEl && imgEl.src !== data.qr_image) imgEl.src = data.qr_image;
-                    const linkEl = document.getElementById('qr-direct-link');
-                    if (linkEl && data.qr_url && linkEl.getAttribute('href') !== data.qr_url) linkEl.href = data.qr_url;
+                if (data.status === 'waiting' && (data.qr_image || data.qr_url)) {
+                    _renderQrVisual(data.qr_image, data.qr_url);
                 }
                 if (data.status === 'expired' || data.error) {
                     statusEl.innerText = data.message || data.error || 'Mã QR hết hạn, bấm Đổi mã QR.';

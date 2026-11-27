@@ -41,8 +41,8 @@ def is_scrape_cancelled():
     global _scrape_cancel_requested
     return _scrape_cancel_requested
 
-DEFAULT_API_ID = 2040
-DEFAULT_API_HASH = "b18441a1ff607e10a989891a5462e627"
+DEFAULT_API_ID = 35113375
+DEFAULT_API_HASH = "a952d49f01385827b34e454a412f4eb3"
 
 CLIENT_PARAMS = {
     "device_model": "Desktop",
@@ -283,11 +283,32 @@ async def switch_account(session_name):
         return {"success": True, "name": me.first_name, "phone": me.phone}
     return {"success": False, "reason": "Tài khoản này chưa đăng nhập hợp lệ"}
 
-async def start_login_request(phone_number):
+def _describe_sent_code(sent_type):
+    name = type(sent_type).__name__
+    mapping = {
+        "SentCodeTypeApp": ("app", "ứng dụng Telegram (tin nhắn từ Telegram 777000)"),
+        "SentCodeTypeSms": ("sms", "tin nhắn SMS về số điện thoại"),
+        "SentCodeTypeFragmentSms": ("fragment", "Fragment (số ẩn danh / Fragment)"),
+        "SentCodeTypeEmailCode": ("email", f"Email ({getattr(sent_type, 'email_pattern', '')})"),
+        "SentCodeTypeSetUpEmailRequired": ("email_setup", "Telegram yêu cầu cài Email xác thực trước"),
+        "SentCodeTypeCall": ("call", "cuộc gọi tự động đọc mã"),
+        "SentCodeTypeFlashCall": ("flash_call", "cuộc gọi nhỡ (Flash Call)"),
+        "SentCodeTypeMissedCall": ("missed_call", "cuộc gọi nhỡ (Missed Call)"),
+        "SentCodeTypeFirebaseSms": ("firebase_sms", "SMS qua Firebase (chỉ hỗ trợ app chính thức)"),
+    }
+    return mapping.get(name, (name, f"kênh {name}"))
+
+async def start_login_request(phone_number, resend=False):
     global _pending_login_client, _pending_phone, _pending_phone_code_hash
+    from telethon.tl.functions.auth import ResendCodeRequest
+
     config = get_config()
     api_id = config.get("api_id") or DEFAULT_API_ID
     api_hash = config.get("api_hash") or DEFAULT_API_HASH
+    # Tránh dùng API ID 2040 công cộng vì Telegram hay chặn/bỏ qua gửi OTP
+    if str(api_id) == "2040":
+        api_id = DEFAULT_API_ID
+        api_hash = DEFAULT_API_HASH
 
     if not api_id or not api_hash:
         raise Exception("Chưa cấu hình API ID hoặc API Hash!")
@@ -295,6 +316,30 @@ async def start_login_request(phone_number):
     clean_phone = format_phone(phone_number)
     digits = re.sub(r'\D', '', clean_phone)
     new_session_path = os.path.join(SESSIONS_DIR, f"session_{digits}")
+
+    # Nếu bấm "Gửi lại mã" cùng SĐT và phiên đang mở -> gọi ResendCodeRequest để Telegram chuyển sang SMS/kênh kế tiếp
+    if (
+        resend
+        and _pending_login_client
+        and _pending_phone == clean_phone
+        and _pending_phone_code_hash
+    ):
+        try:
+            if not _pending_login_client.is_connected():
+                await _pending_login_client.connect()
+            sent = await _pending_login_client(ResendCodeRequest(clean_phone, _pending_phone_code_hash))
+            _pending_phone_code_hash = sent.phone_code_hash
+            delivery_code, delivery_desc = _describe_sent_code(sent.type)
+            return {
+                "status": "code_sent",
+                "phone": clean_phone,
+                "delivery_type": delivery_code,
+                "message": f"Đã gửi lại mã OTP qua {delivery_desc} cho {clean_phone}"
+            }
+        except errors.FloodWaitError as e:
+            raise Exception(f"Telegram yêu cầu giãn cách. Vui lòng thử lại sau {e.seconds} giây.")
+        except Exception:
+            pass  # Fallback sang tạo phiên gửi mã mới bên dưới
 
     # Đóng phiên chờ trước đó nếu có để giải phóng file SQLite
     if _pending_login_client:
@@ -309,15 +354,30 @@ async def start_login_request(phone_number):
     _pending_login_client = TelegramClient(new_session_path, api_id, api_hash, **CLIENT_PARAMS)
     await _pending_login_client.connect()
 
+    if await _pending_login_client.is_user_authorized():
+        me = await _pending_login_client.get_me()
+        session_name = f"session_{digits}"
+        await _pending_login_client.disconnect()
+        _pending_login_client = None
+        await switch_account(session_name)
+        return {
+            "status": "already_authorized",
+            "phone": clean_phone,
+            "message": f"Tài khoản {me.first_name} ({clean_phone}) đã đăng nhập sẵn!"
+        }
+
     try:
         sent = await _pending_login_client.send_code_request(clean_phone)
         _pending_phone_code_hash = sent.phone_code_hash
     except errors.FloodWaitError as e:
         raise Exception(f"Telegram yêu cầu giãn cách. Vui lòng thử lại sau {e.seconds} giây.")
 
+    delivery_code, delivery_desc = _describe_sent_code(sent.type)
     return {
         "status": "code_sent",
-        "phone": clean_phone
+        "phone": clean_phone,
+        "delivery_type": delivery_code,
+        "message": f"Đã gửi mã OTP qua {delivery_desc} cho {clean_phone}"
     }
 
 async def complete_login_request(code, password=None):

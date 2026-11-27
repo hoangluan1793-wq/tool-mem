@@ -361,10 +361,11 @@ async def handle_accounts_send_code(request):
     _last_heartbeat = time.time()
     body = await request.json()
     phone = body.get("phone", "").strip()
+    resend = bool(body.get("resend", False))
     if not phone:
         return web.json_response({"error": "Vui lòng nhập số điện thoại!"}, status=400)
     try:
-        res = await start_login_request(phone)
+        res = await start_login_request(phone, resend=resend)
         _last_heartbeat = time.time()
         return web.json_response(res)
     except Exception as e:

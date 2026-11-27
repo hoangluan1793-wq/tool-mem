@@ -964,7 +964,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-gray-300 mb-1">Số điện thoại Telegram:</label>
                         <div class="flex gap-2">
-                            <input type="text" id="new-acc-phone" placeholder="ví dụ: 0339111172" class="flex-1 bg-black/40 border border-borderglass rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-neonpurple">
+                            <input type="text" id="new-acc-phone" oninput="_loginResendPhone=''" placeholder="ví dụ: 0339111172" class="flex-1 bg-black/40 border border-borderglass rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-neonpurple">
                             <button onclick="sendLoginCode()" id="btn-send-code" class="px-3 py-2 rounded-lg bg-neonpurple/30 hover:bg-neonpurple/50 text-white text-xs font-medium whitespace-nowrap">
                                 Gửi mã OTP
                             </button>
@@ -972,6 +972,7 @@
                     </div>
 
                     <div id="otp-input-group" class="hidden space-y-3 border-t border-borderglass pt-3">
+                        <div id="otp-delivery-hint" class="hidden text-[11px] text-neoncyan bg-neoncyan/10 border border-neoncyan/20 rounded-lg px-2.5 py-1.5"></div>
                         <div>
                             <label class="block text-xs font-semibold text-gray-300 mb-1">Mã xác thực Telegram (OTP):</label>
                             <input type="text" id="new-acc-otp" placeholder="ví dụ: 12345" class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-neonpurple">
@@ -1358,13 +1359,16 @@
             }
         }
 
+        let _loginResendPhone = '';
+
         async function sendLoginCode() {
             const phone = document.getElementById('new-acc-phone').value.trim();
             if (!phone) return showToast('Vui lòng nhập số điện thoại!', 'error');
 
+            const isResend = (_loginResendPhone === phone);
             const btn = document.getElementById('btn-send-code');
             btn.disabled = true;
-            btn.innerText = 'Đang gửi mã...';
+            btn.innerText = isResend ? 'Đang gửi lại...' : 'Đang gửi mã...';
 
             fetch('/api/heartbeat').catch(() => {});
 
@@ -1372,13 +1376,24 @@
                 const res = await fetch('/api/accounts/send_code', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone })
+                    body: JSON.stringify({ phone, resend: isResend })
                 });
                 const data = await res.json();
                 if (data.error) {
                     showToast(data.error, 'error');
+                } else if (data.status === 'already_authorized') {
+                    showToast(data.message || 'Tài khoản đã đăng nhập sẵn!', 'success');
+                    await refreshAuthAndAccounts();
+                    closeAccountsModal();
                 } else {
-                    showToast(`Đã gửi mã xác nhận đến Telegram của số: ${data.phone}`, 'success');
+                    _loginResendPhone = phone;
+                    const msg = data.message || `Đã gửi mã xác nhận đến Telegram của số: ${data.phone}`;
+                    showToast(msg, 'success');
+                    const hintEl = document.getElementById('otp-delivery-hint');
+                    if (hintEl) {
+                        hintEl.innerText = msg;
+                        hintEl.classList.remove('hidden');
+                    }
                     document.getElementById('otp-input-group').classList.remove('hidden');
                 }
             } catch (e) {

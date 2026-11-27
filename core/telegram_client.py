@@ -380,6 +380,32 @@ async def start_login_request(phone_number, resend=False):
         "message": f"Đã gửi mã OTP qua {delivery_desc} cho {clean_phone}"
     }
 
+def _save_account_record(me, clean_phone, session_name):
+    config = get_config()
+    accounts = config.get("accounts", [])
+    full_name = f"{me.first_name or ''} {me.last_name or ''}".strip() or "Người dùng"
+
+    exists = False
+    for a in accounts:
+        if a.get("phone") == clean_phone or a.get("session_name") == session_name:
+            a["name"] = full_name
+            a["username"] = me.username or ""
+            a["phone"] = clean_phone
+            a["session_name"] = session_name
+            exists = True
+            break
+    if not exists:
+        accounts.append({
+            "name": full_name,
+            "username": me.username or "",
+            "phone": clean_phone,
+            "session_name": session_name
+        })
+
+    config["accounts"] = accounts
+    config["active_session"] = session_name
+    save_config(config)
+
 async def complete_login_request(code, password=None):
     global _pending_login_client, _pending_phone, _pending_phone_code_hash, _client
     if not _pending_login_client:
@@ -401,32 +427,7 @@ async def complete_login_request(code, password=None):
     me = await _pending_login_client.get_me()
     digits = re.sub(r'\D', '', clean_phone)
     session_name = f"session_{digits}"
-
-    # Lưu vào danh sách accounts
-    config = get_config()
-    accounts = config.get("accounts", [])
-    
-    # Kiểm tra tồn tại
-    exists = False
-    for a in accounts:
-        if a.get("phone") == clean_phone or a.get("session_name") == session_name:
-            a["name"] = f"{me.first_name or ''} {me.last_name or ''}".strip() or "Người dùng"
-            a["username"] = me.username or ""
-            a["phone"] = clean_phone
-            a["session_name"] = session_name
-            exists = True
-            break
-    if not exists:
-        accounts.append({
-            "name": f"{me.first_name or ''} {me.last_name or ''}".strip() or "Người dùng",
-            "username": me.username or "",
-            "phone": clean_phone,
-            "session_name": session_name
-        })
-
-    config["accounts"] = accounts
-    config["active_session"] = session_name
-    save_config(config)
+    _save_account_record(me, clean_phone, session_name)
 
     # Đóng client cũ nếu có
     if _client and _client.is_connected():
@@ -438,6 +439,111 @@ async def complete_login_request(code, password=None):
         "status": "success",
         "name": me.first_name,
         "phone": clean_phone,
+        "session_name": session_name
+    }
+
+_pending_qr_login = None
+
+def _get_effective_api_creds():
+    config = get_config()
+    api_id = config.get("api_id") or DEFAULT_API_ID
+    api_hash = config.get("api_hash") or DEFAULT_API_HASH
+    if str(api_id) == "2040":
+        api_id = DEFAULT_API_ID
+        api_hash = DEFAULT_API_HASH
+    if not api_id or not api_hash:
+        raise Exception("Chưa cấu hình API ID hoặc API Hash!")
+    return api_id, api_hash
+
+async def start_qr_login():
+    global _pending_login_client, _pending_qr_login
+    import io, base64, qrcode
+
+    api_id, api_hash = _get_effective_api_creds()
+    if _pending_login_client:
+        try:
+            if _pending_login_client.is_connected():
+                await _pending_login_client.disconnect()
+        except Exception:
+            pass
+        _pending_login_client = None
+    _pending_qr_login = None
+
+    qr_session_base = os.path.join(SESSIONS_DIR, "session_qr_pending")
+    for ext in ("", ".session", ".session-journal"):
+        p = qr_session_base + ext
+        if os.path.exists(p):
+            try:
+                os.remove(p)
+            except Exception:
+                pass
+
+    _pending_login_client = TelegramClient(qr_session_base, api_id, api_hash, **CLIENT_PARAMS)
+    await _pending_login_client.connect()
+    _pending_qr_login = await _pending_login_client.qr_login()
+
+    img = qrcode.make(_pending_qr_login.url)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+
+    return {
+        "status": "qr_ready",
+        "qr_image": f"data:image/png;base64,{b64}",
+    }
+
+async def poll_qr_login(password=None):
+    global _pending_login_client, _pending_qr_login
+    if not _pending_login_client or not _pending_qr_login:
+        return {"status": "expired", "message": "Phiên QR đã hết hạn. Vui lòng tạo mã QR mới!"}
+
+    try:
+        if password:
+            await _pending_login_client.sign_in(password=password)
+            me = await _pending_login_client.get_me()
+        else:
+            me = await _pending_qr_login.wait(timeout=1.5)
+    except asyncio.TimeoutError:
+        return {"status": "waiting"}
+    except errors.SessionPasswordNeededError:
+        return {"status": "password_needed", "message": "Tài khoản có bảo mật 2 bước (2FA). Vui lòng nhập mật khẩu 2FA!"}
+    except errors.FloodWaitError as e:
+        raise Exception(f"Telegram yêu cầu giãn cách. Vui lòng thử lại sau {e.seconds} giây.")
+    except Exception as e:
+        msg = str(e)
+        if "expired" in msg.lower() or "token" in msg.lower():
+            return {"status": "expired", "message": "Mã QR đã hết hạn. Vui lòng tạo mã mới!"}
+        raise
+
+    raw_phone = f"+{me.phone}" if getattr(me, "phone", None) else str(me.id)
+    digits = re.sub(r'\D', '', raw_phone)
+    session_name = f"session_{digits}"
+
+    try:
+        if _pending_login_client.is_connected():
+            await _pending_login_client.disconnect()
+    except Exception:
+        pass
+    _pending_login_client = None
+    _pending_qr_login = None
+
+    src_file = os.path.join(SESSIONS_DIR, "session_qr_pending.session")
+    dst_file = os.path.join(SESSIONS_DIR, f"{session_name}.session")
+    if os.path.exists(src_file):
+        if os.path.exists(dst_file):
+            try:
+                os.remove(dst_file)
+            except Exception:
+                pass
+        os.replace(src_file, dst_file)
+
+    _save_account_record(me, raw_phone, session_name)
+    await switch_account(session_name)
+
+    return {
+        "status": "success",
+        "name": me.first_name,
+        "phone": raw_phone,
         "session_name": session_name
     }
 

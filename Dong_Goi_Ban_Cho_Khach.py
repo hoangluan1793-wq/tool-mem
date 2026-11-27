@@ -69,6 +69,8 @@ def run_pyinstaller():
         "--hidden-import=cryptography",
         "--hidden-import=sqlite3",
         "--hidden-import=msvcrt",
+        "--hidden-import=qrcode",
+        "--hidden-import=PIL",
         os.path.join(BASE_DIR, "app.py")
     ]
     if os.path.exists(icon_path):

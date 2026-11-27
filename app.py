@@ -47,6 +47,7 @@ from core.database import (
 from core.telegram_client import (
     get_telegram_client, check_auth, get_admin_channels, get_my_groups, get_group_topics, scrape_group_members, post_to_channel,
     get_accounts_list, switch_account, start_login_request, complete_login_request, delete_saved_account,
+    start_qr_login, poll_qr_login,
     request_scrape_stop, export_all_sessions, restore_all_sessions
 )
 from modules.ads_manager.scheduler import (
@@ -393,6 +394,33 @@ async def handle_accounts_delete(request):
     session_name = body.get("session_name")
     res = await delete_saved_account(session_name)
     return web.json_response(res)
+
+async def handle_accounts_qr_start(request):
+    global _last_heartbeat
+    _last_heartbeat = time.time()
+    try:
+        res = await start_qr_login()
+        _last_heartbeat = time.time()
+        return web.json_response(res)
+    except Exception as e:
+        _last_heartbeat = time.time()
+        return web.json_response({"error": str(e)}, status=400)
+
+async def handle_accounts_qr_poll(request):
+    global _last_heartbeat
+    _last_heartbeat = time.time()
+    try:
+        body = await request.json() if request.can_read_body else {}
+    except Exception:
+        body = {}
+    password = (body.get("password") or "").strip() or None
+    try:
+        res = await poll_qr_login(password=password)
+        _last_heartbeat = time.time()
+        return web.json_response(res)
+    except Exception as e:
+        _last_heartbeat = time.time()
+        return web.json_response({"error": str(e)}, status=400)
 
 async def handle_accounts_export_sessions(request):
     return web.json_response(export_all_sessions())
@@ -932,6 +960,8 @@ def create_app():
     app.router.add_post("/api/accounts/switch", handle_accounts_switch)
     app.router.add_post("/api/accounts/send_code", handle_accounts_send_code)
     app.router.add_post("/api/accounts/verify_code", handle_accounts_verify_code)
+    app.router.add_post("/api/accounts/qr_start", handle_accounts_qr_start)
+    app.router.add_post("/api/accounts/qr_poll", handle_accounts_qr_poll)
     app.router.add_post("/api/accounts/delete", handle_accounts_delete)
     app.router.add_get("/api/accounts/export_sessions", handle_accounts_export_sessions)
     app.router.add_post("/api/accounts/restore_sessions", handle_accounts_restore_sessions)

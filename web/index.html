@@ -960,6 +960,35 @@
 
             <!-- Vùng Đăng nhập tài khoản mới -->
             <div id="acc-tab-content-new" class="hidden space-y-4">
+                <!-- Đăng nhập bằng QR (Không cần OTP) -->
+                <div class="rounded-xl bg-black/30 border border-borderglass p-3 space-y-2.5">
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <div class="text-xs font-semibold text-white">Quét mã QR (Không cần OTP)</div>
+                            <div class="text-[11px] text-gray-400">Telegram &rarr; Cài đặt &rarr; Thiết bị &rarr; Liên kết thiết bị</div>
+                        </div>
+                        <button onclick="startQrLogin()" id="btn-qr-start" class="px-3 py-1.5 rounded-lg bg-neoncyan/20 hover:bg-neoncyan/35 text-neoncyan text-xs font-medium whitespace-nowrap border border-neoncyan/30">
+                            Tạo mã QR
+                        </button>
+                    </div>
+                    <div id="qr-login-box" class="hidden flex flex-col items-center gap-2 pt-2 border-t border-borderglass">
+                        <div class="bg-white p-2 rounded-lg">
+                            <img id="qr-login-img" src="" alt="QR" class="w-40 h-40 block">
+                        </div>
+                        <div id="qr-login-status" class="text-[11px] text-neoncyan text-center">Đang chờ quét mã QR...</div>
+                        <div id="qr-2fa-group" class="hidden w-full space-y-2">
+                            <input type="password" id="qr-2fa-pass" placeholder="Nhập mật khẩu 2 bước (2FA)" class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-neonpurple">
+                            <button onclick="submitQr2fa()" class="w-full py-2 rounded-lg bg-gradient-to-r from-neonpurple to-neonblue text-white text-xs font-medium">Xác nhận 2FA</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 text-[11px] text-gray-500">
+                    <div class="flex-1 h-px bg-borderglass"></div>
+                    <span>hoặc đăng nhập bằng SĐT / OTP</span>
+                    <div class="flex-1 h-px bg-borderglass"></div>
+                </div>
+
                 <div class="space-y-3">
                     <div>
                         <label class="block text-xs font-semibold text-gray-300 mb-1">Số điện thoại Telegram:</label>
@@ -1236,6 +1265,7 @@
         }
 
         function closeAccountsModal() {
+            stopQrPolling();
             document.getElementById('modal-accounts').classList.add('hidden');
         }
 
@@ -1356,6 +1386,105 @@
                 }
             } catch (e) {
                 showToast(e.message, 'error');
+            }
+        }
+
+        let _qrPollTimer = null;
+
+        function stopQrPolling() {
+            if (_qrPollTimer) {
+                clearTimeout(_qrPollTimer);
+                _qrPollTimer = null;
+            }
+        }
+
+        async function startQrLogin() {
+            stopQrPolling();
+            const btn = document.getElementById('btn-qr-start');
+            const box = document.getElementById('qr-login-box');
+            const statusEl = document.getElementById('qr-login-status');
+            const twoFaGroup = document.getElementById('qr-2fa-group');
+            btn.disabled = true;
+            btn.innerText = 'Đang tạo...';
+            twoFaGroup.classList.add('hidden');
+
+            try {
+                const res = await fetch('/api/accounts/qr_start', { method: 'POST' });
+                const data = await res.json();
+                if (data.error) {
+                    showToast(data.error, 'error');
+                    return;
+                }
+                document.getElementById('qr-login-img').src = data.qr_image;
+                statusEl.innerText = 'Đang chờ quét mã QR trên điện thoại...';
+                box.classList.remove('hidden');
+                btn.innerText = 'Đổi mã QR';
+                pollQrLoop();
+            } catch (e) {
+                showToast('Lỗi tạo mã QR: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                if (btn.innerText === 'Đang tạo...') btn.innerText = 'Tạo mã QR';
+            }
+        }
+
+        async function pollQrLoop() {
+            stopQrPolling();
+            const modal = document.getElementById('modal-accounts');
+            if (!modal || modal.classList.contains('hidden')) return;
+
+            try {
+                const res = await fetch('/api/accounts/qr_poll', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const data = await res.json();
+                const statusEl = document.getElementById('qr-login-status');
+
+                if (data.status === 'success') {
+                    showToast(`Đăng nhập thành công: ${data.name || data.phone}!`, 'success');
+                    document.getElementById('qr-login-box').classList.add('hidden');
+                    await refreshAuthAndAccounts();
+                    closeAccountsModal();
+                    return;
+                }
+                if (data.status === 'password_needed') {
+                    statusEl.innerText = data.message || 'Cần nhập mật khẩu 2FA!';
+                    document.getElementById('qr-2fa-group').classList.remove('hidden');
+                    return;
+                }
+                if (data.status === 'expired' || data.error) {
+                    statusEl.innerText = data.message || data.error || 'Mã QR hết hạn, bấm Đổi mã QR.';
+                    return;
+                }
+            } catch (e) {
+                // Retry silently while waiting
+            }
+            _qrPollTimer = setTimeout(pollQrLoop, 1500);
+        }
+
+        async function submitQr2fa() {
+            const password = document.getElementById('qr-2fa-pass').value.trim();
+            if (!password) return showToast('Vui lòng nhập mật khẩu 2FA!', 'error');
+            try {
+                const res = await fetch('/api/accounts/qr_poll', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                const data = await res.json();
+                if (data.error) return showToast(data.error, 'error');
+                if (data.status === 'success') {
+                    showToast(`Đăng nhập thành công: ${data.name || data.phone}!`, 'success');
+                    document.getElementById('qr-login-box').classList.add('hidden');
+                    await refreshAuthAndAccounts();
+                    closeAccountsModal();
+                } else {
+                    showToast(data.message || 'Xác thực 2FA chưa thành công', 'error');
+                }
+            } catch (e) {
+                showToast('Lỗi 2FA: ' + e.message, 'error');
             }
         }
 

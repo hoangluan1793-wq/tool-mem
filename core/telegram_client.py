@@ -514,6 +514,7 @@ async def _qr_wait_worker():
                     return
                 await _qr_login.recreate()
                 _qr_state["qr_image"] = _make_qr_data_uri(_qr_login.url)
+                _qr_state["qr_url"] = _qr_login.url
         _qr_state = {"status": "expired", "message": "Mã QR đã hết hạn. Vui lòng tạo mã mới!"}
     except errors.SessionPasswordNeededError:
         _qr_state = {"status": "password_needed", "message": "Tài khoản có bảo mật 2 bước (2FA). Vui lòng nhập mật khẩu 2FA!"}
@@ -555,12 +556,13 @@ async def start_qr_login():
     await _qr_client.connect()
     _qr_login = await _qr_client.qr_login()
     qr_image = _make_qr_data_uri(_qr_login.url)
-    _qr_state = {"status": "waiting", "qr_image": qr_image}
+    _qr_state = {"status": "waiting", "qr_image": qr_image, "qr_url": _qr_login.url}
     _qr_task = asyncio.create_task(_qr_wait_worker())
 
     return {
         "status": "qr_ready",
         "qr_image": qr_image,
+        "qr_url": _qr_login.url,
     }
 
 async def poll_qr_login(password=None):

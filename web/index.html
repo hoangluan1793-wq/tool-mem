@@ -975,6 +975,9 @@
                         <div class="bg-white p-2 rounded-lg">
                             <img id="qr-login-img" src="" alt="QR" class="w-40 h-40 block">
                         </div>
+                        <a id="qr-direct-link" href="#" class="w-full text-center py-2 px-3 rounded-lg bg-neonblue/25 hover:bg-neonblue/40 border border-neonblue/40 text-white text-xs font-medium transition">
+                            Mở app Telegram trên ĐT để xác nhận (Không cần quét)
+                        </a>
                         <div id="qr-login-status" class="text-[11px] text-neoncyan text-center">Đang chờ quét mã QR...</div>
                         <div id="qr-2fa-group" class="hidden w-full space-y-2">
                             <input type="password" id="qr-2fa-pass" placeholder="Nhập mật khẩu 2 bước (2FA)" class="w-full bg-black/40 border border-borderglass rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-neonpurple">
@@ -1416,7 +1419,9 @@
                     return;
                 }
                 document.getElementById('qr-login-img').src = data.qr_image;
-                statusEl.innerText = 'Đang chờ quét mã QR trên điện thoại...';
+                const linkEl = document.getElementById('qr-direct-link');
+                if (linkEl && data.qr_url) linkEl.href = data.qr_url;
+                statusEl.innerText = 'Đang chờ quét hoặc bấm mở Telegram trên ĐT...';
                 box.classList.remove('hidden');
                 btn.innerText = 'Đổi mã QR';
                 pollQrLoop();
@@ -1457,6 +1462,8 @@
                 if (data.status === 'waiting' && data.qr_image) {
                     const imgEl = document.getElementById('qr-login-img');
                     if (imgEl && imgEl.src !== data.qr_image) imgEl.src = data.qr_image;
+                    const linkEl = document.getElementById('qr-direct-link');
+                    if (linkEl && data.qr_url && linkEl.getAttribute('href') !== data.qr_url) linkEl.href = data.qr_url;
                 }
                 if (data.status === 'expired' || data.error) {
                     statusEl.innerText = data.message || data.error || 'Mã QR hết hạn, bấm Đổi mã QR.';

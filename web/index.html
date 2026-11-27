@@ -1454,6 +1454,10 @@
                     document.getElementById('qr-2fa-group').classList.remove('hidden');
                     return;
                 }
+                if (data.status === 'waiting' && data.qr_image) {
+                    const imgEl = document.getElementById('qr-login-img');
+                    if (imgEl && imgEl.src !== data.qr_image) imgEl.src = data.qr_image;
+                }
                 if (data.status === 'expired' || data.error) {
                     statusEl.innerText = data.message || data.error || 'Mã QR hết hạn, bấm Đổi mã QR.';
                     return;
@@ -1461,7 +1465,7 @@
             } catch (e) {
                 // Retry silently while waiting
             }
-            _qrPollTimer = setTimeout(pollQrLoop, 1500);
+            _qrPollTimer = setTimeout(pollQrLoop, 1000);
         }
 
         async function submitQr2fa() {

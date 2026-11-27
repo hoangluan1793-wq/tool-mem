@@ -442,7 +442,10 @@ async def complete_login_request(code, password=None):
         "session_name": session_name
     }
 
-_pending_qr_login = None
+_qr_client = None
+_qr_login = None
+_qr_task = None
+_qr_state = {"status": "idle"}
 
 def _get_effective_api_creds():
     config = get_config()
@@ -455,77 +458,27 @@ def _get_effective_api_creds():
         raise Exception("Chưa cấu hình API ID hoặc API Hash!")
     return api_id, api_hash
 
-async def start_qr_login():
-    global _pending_login_client, _pending_qr_login
+def _make_qr_data_uri(url):
     import io, base64, qrcode
-
-    api_id, api_hash = _get_effective_api_creds()
-    if _pending_login_client:
-        try:
-            if _pending_login_client.is_connected():
-                await _pending_login_client.disconnect()
-        except Exception:
-            pass
-        _pending_login_client = None
-    _pending_qr_login = None
-
-    qr_session_base = os.path.join(SESSIONS_DIR, "session_qr_pending")
-    for ext in ("", ".session", ".session-journal"):
-        p = qr_session_base + ext
-        if os.path.exists(p):
-            try:
-                os.remove(p)
-            except Exception:
-                pass
-
-    _pending_login_client = TelegramClient(qr_session_base, api_id, api_hash, **CLIENT_PARAMS)
-    await _pending_login_client.connect()
-    _pending_qr_login = await _pending_login_client.qr_login()
-
-    img = qrcode.make(_pending_qr_login.url)
+    img = qrcode.make(url)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{b64}"
 
-    return {
-        "status": "qr_ready",
-        "qr_image": f"data:image/png;base64,{b64}",
-    }
-
-async def poll_qr_login(password=None):
-    global _pending_login_client, _pending_qr_login
-    if not _pending_login_client or not _pending_qr_login:
-        return {"status": "expired", "message": "Phiên QR đã hết hạn. Vui lòng tạo mã QR mới!"}
-
-    try:
-        if password:
-            await _pending_login_client.sign_in(password=password)
-            me = await _pending_login_client.get_me()
-        else:
-            me = await _pending_qr_login.wait(timeout=1.5)
-    except asyncio.TimeoutError:
-        return {"status": "waiting"}
-    except errors.SessionPasswordNeededError:
-        return {"status": "password_needed", "message": "Tài khoản có bảo mật 2 bước (2FA). Vui lòng nhập mật khẩu 2FA!"}
-    except errors.FloodWaitError as e:
-        raise Exception(f"Telegram yêu cầu giãn cách. Vui lòng thử lại sau {e.seconds} giây.")
-    except Exception as e:
-        msg = str(e)
-        if "expired" in msg.lower() or "token" in msg.lower():
-            return {"status": "expired", "message": "Mã QR đã hết hạn. Vui lòng tạo mã mới!"}
-        raise
-
+async def _finalize_qr_user(me):
+    global _qr_client, _qr_login, _qr_state
     raw_phone = f"+{me.phone}" if getattr(me, "phone", None) else str(me.id)
     digits = re.sub(r'\D', '', raw_phone)
     session_name = f"session_{digits}"
 
     try:
-        if _pending_login_client.is_connected():
-            await _pending_login_client.disconnect()
+        if _qr_client and _qr_client.is_connected():
+            await _qr_client.disconnect()
     except Exception:
         pass
-    _pending_login_client = None
-    _pending_qr_login = None
+    _qr_client = None
+    _qr_login = None
 
     src_file = os.path.join(SESSIONS_DIR, "session_qr_pending.session")
     dst_file = os.path.join(SESSIONS_DIR, f"{session_name}.session")
@@ -539,13 +492,91 @@ async def poll_qr_login(password=None):
 
     _save_account_record(me, raw_phone, session_name)
     await switch_account(session_name)
-
-    return {
+    _qr_state = {
         "status": "success",
         "name": me.first_name,
         "phone": raw_phone,
         "session_name": session_name
     }
+
+async def _qr_wait_worker():
+    global _qr_client, _qr_login, _qr_state
+    try:
+        for _ in range(10):  # Tự làm mới QR tối đa 10 lần (~5 phút)
+            if not _qr_login or not _qr_client:
+                return
+            try:
+                me = await _qr_login.wait(timeout=25)
+                await _finalize_qr_user(me)
+                return
+            except asyncio.TimeoutError:
+                if not _qr_login or not _qr_client:
+                    return
+                await _qr_login.recreate()
+                _qr_state["qr_image"] = _make_qr_data_uri(_qr_login.url)
+        _qr_state = {"status": "expired", "message": "Mã QR đã hết hạn. Vui lòng tạo mã mới!"}
+    except errors.SessionPasswordNeededError:
+        _qr_state = {"status": "password_needed", "message": "Tài khoản có bảo mật 2 bước (2FA). Vui lòng nhập mật khẩu 2FA!"}
+    except asyncio.CancelledError:
+        pass
+    except Exception as e:
+        _qr_state = {"status": "expired", "message": f"Lỗi QR: {e}"}
+
+async def start_qr_login():
+    global _qr_client, _qr_login, _qr_task, _qr_state
+    if _qr_task and not _qr_task.done():
+        _qr_task.cancel()
+        try:
+            await _qr_task
+        except Exception:
+            pass
+    _qr_task = None
+
+    if _qr_client:
+        try:
+            if _qr_client.is_connected():
+                await _qr_client.disconnect()
+        except Exception:
+            pass
+        _qr_client = None
+    _qr_login = None
+
+    api_id, api_hash = _get_effective_api_creds()
+    qr_session_base = os.path.join(SESSIONS_DIR, "session_qr_pending")
+    for ext in ("", ".session", ".session-journal"):
+        p = qr_session_base + ext
+        if os.path.exists(p):
+            try:
+                os.remove(p)
+            except Exception:
+                pass
+
+    _qr_client = TelegramClient(qr_session_base, api_id, api_hash, **CLIENT_PARAMS)
+    await _qr_client.connect()
+    _qr_login = await _qr_client.qr_login()
+    qr_image = _make_qr_data_uri(_qr_login.url)
+    _qr_state = {"status": "waiting", "qr_image": qr_image}
+    _qr_task = asyncio.create_task(_qr_wait_worker())
+
+    return {
+        "status": "qr_ready",
+        "qr_image": qr_image,
+    }
+
+async def poll_qr_login(password=None):
+    global _qr_client, _qr_state
+    if password:
+        if not _qr_client:
+            return {"status": "expired", "message": "Phiên QR đã hết hạn. Vui lòng tạo mã mới!"}
+        try:
+            await _qr_client.sign_in(password=password)
+            me = await _qr_client.get_me()
+            await _finalize_qr_user(me)
+            return dict(_qr_state)
+        except errors.FloodWaitError as e:
+            raise Exception(f"Telegram yêu cầu giãn cách. Vui lòng thử lại sau {e.seconds} giây.")
+
+    return dict(_qr_state)
 
 async def delete_saved_account(session_name):
     config = get_config()

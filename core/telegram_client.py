@@ -546,6 +546,7 @@ async def start_qr_login():
     _qr_login = None
 
     api_id, api_hash = _get_effective_api_creds()
+    os.makedirs(SESSIONS_DIR, exist_ok=True)
     qr_session_base = os.path.join(SESSIONS_DIR, "session_qr_pending")
     for ext in ("", ".session", ".session-journal"):
         p = qr_session_base + ext

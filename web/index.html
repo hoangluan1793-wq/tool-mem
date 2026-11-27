@@ -1446,7 +1446,12 @@
 
             try {
                 const res = await fetch('/api/accounts/qr_start', { method: 'POST' });
-                const data = await res.json();
+                const rawText = await res.text();
+                let data = {};
+                try { data = JSON.parse(rawText); } catch (_) {
+                    showToast(`Server chưa sẵn sàng (HTTP ${res.status}), đợi vài giây rồi thử lại!`, 'error');
+                    return;
+                }
                 if (data.error) {
                     showToast(data.error, 'error');
                     return;
